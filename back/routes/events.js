@@ -235,16 +235,20 @@ router.get('/:id/stats', async (req, res) => {
             ORDER BY u.batch ASC
         `, [id]);
 
-        // 3. Breakdown by Counter (Volunteer Name)
+        // 3. Breakdown by Counter (Floor/Counter Location) - NEW
         const counterReq = await db.query(`
-            SELECT u.name as counter_name, COUNT(*) as count
+            SELECT 
+                CONCAT('Floor ', va.floor, ' - Counter ', va.counter) as counter_name, 
+                COUNT(*) as count
             FROM volunteer_actions va
-            JOIN users u ON va.volunteer_id = u.user_id
             JOIN registrations r ON va.registration_id = r.registration_id
-            WHERE r.event_id = $1
-            GROUP BY u.name
-            ORDER BY u.name ASC
+            WHERE r.event_id = $1 
+            AND va.floor IS NOT NULL 
+            AND va.counter IS NOT NULL
+            GROUP BY va.floor, va.counter
+            ORDER BY va.floor, va.counter ASC
         `, [id]);
+
 
         res.json({
             total: parseInt(totalReq.rows[0].count),
@@ -483,26 +487,21 @@ router.get('/all-for-student', async (req, res) => {
 router.get('/:id/scan-history', async (req, res) => {
     const { id } = req.params;
     
-    console.log('=== SCAN HISTORY REQUEST ===');
-    console.log('Requested event ID:', id);
-    
     try {
         const result = await db.query(`
             SELECT 
                 u.name as student_name,
                 u.email as roll_number,
                 u.batch,
-                'Staff' as counter_name,
+                CONCAT('Floor ', va.floor, ' - Counter ', va.counter) as counter_name,
                 r.served_at as scanned_at
             FROM registrations r
             JOIN users u ON r.student_id = u.user_id
+            JOIN volunteer_actions va ON va.registration_id = r.registration_id
             WHERE r.event_id = $1 AND r.status = 'served'
             ORDER BY r.served_at DESC
             LIMIT 50
         `, [id]);
-
-        console.log('Query executed successfully');
-        console.log('Found', result.rows.length, 'served registrations');
 
         res.json({ scanHistory: result.rows });
     } catch (err) {
@@ -510,6 +509,8 @@ router.get('/:id/scan-history', async (req, res) => {
         res.status(500).json({ error: "Server error fetching scan history" });
     }
 });
+
+
 
 
 
@@ -551,5 +552,75 @@ router.get('/student/:id/all', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
+// GET available floors/counters for an event
+// GET available floors/counters for an event
+router.get('/:id/slots', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        const result = await db.query(`
+            SELECT DISTINCT floor, counter 
+            FROM event_slots 
+            WHERE event_id = $1 
+            ORDER BY floor, counter
+        `, [id]);
+
+        res.json({ slots: result.rows });
+    } catch (err) {
+        console.error('Error fetching event slots:', err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// UPDATE volunteer's current floor/counter assignment
+router.patch('/volunteers/:vid/assignment', async (req, res) => {
+    const { vid } = req.params;
+    const { floor, counter } = req.body;
+    
+    try {
+        const result = await db.query(`
+            UPDATE volunteers 
+            SET current_floor = $1, current_counter = $2 
+            WHERE id = $3 
+            RETURNING id, name, current_floor, current_counter
+        `, [floor, counter, vid]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Volunteer not found" });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating volunteer assignment:', err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+
+// UPDATE volunteer's current floor/counter assignment
+router.patch('/volunteers/:vid/assignment', async (req, res) => {
+    const { vid } = req.params;
+    const { floor, counter } = req.body;
+    
+    try {
+        const result = await db.query(`
+            UPDATE volunteers 
+            SET current_floor = $1, current_counter = $2 
+            WHERE id = $3 
+            RETURNING id, name, current_floor, current_counter
+        `, [floor, counter, vid]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Volunteer not found" });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating volunteer assignment:', err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
 
 module.exports = router;

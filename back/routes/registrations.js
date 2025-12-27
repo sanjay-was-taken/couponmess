@@ -92,9 +92,33 @@ router.post('/scan', async (req, res) => {
         }
 
         const registration = reg.rows[0];
-        console.log('✅ Found registration:', registration.registration_id);
+        console.log('✅ Found registration for event:', registration.event_id);
 
-        // B. Check Status
+        // B. Get volunteer's assigned event and assignment
+        const volunteerResult = await db.query(
+            'SELECT event_id, current_floor, current_counter FROM volunteers WHERE id = $1',
+            [volunteer_id]
+        );
+
+        if (volunteerResult.rows.length === 0) {
+            console.log('❌ Volunteer not found');
+            return res.status(404).json({ error: "Volunteer not found" });
+        }
+
+        const volunteer = volunteerResult.rows[0];
+        console.log('✅ Volunteer assigned to event:', volunteer.event_id);
+
+        // C. **NEW: Validate event match**
+        if (registration.event_id !== volunteer.event_id) {
+            console.log(`❌ Event mismatch: Volunteer ${volunteer_id} (Event ${volunteer.event_id}) tried to scan QR for Event ${registration.event_id}`);
+            return res.status(403).json({ 
+                error: "You can only scan QR codes for your assigned event" 
+            });
+        }
+
+        console.log('✅ Event validation passed');
+
+        // D. Check Status
         if (registration.status === 'served') {
             console.log('❌ Already served');
             return res.status(400).json({ error: "Student already served" });
@@ -104,29 +128,20 @@ router.post('/scan', async (req, res) => {
             return res.status(400).json({ error: "Registration cancelled" });
         }
 
-        // C. Update Status
+        // E. Update Status
         console.log('✅ Updating registration status to served...');
         await db.query(
-                "UPDATE registrations SET status = 'served', served_at = NOW() WHERE registration_id = $1",
+            "UPDATE registrations SET status = 'served', served_at = NOW() WHERE registration_id = $1",
             [registration.registration_id]
         );
-        console.log('✅ Registration status updated successfully');
 
-       // D. Record Volunteer Action (without created_at column)
-        try {
-            console.log('✅ Recording volunteer action...');
-            console.log('Inserting: volunteer_id =', volunteer_id, 'registration_id =', registration.registration_id);
-
-            const actionResult = await db.query(
-                `INSERT INTO volunteer_actions (volunteer_id, registration_id, action) VALUES ($1, $2, 'scan') RETURNING *`,
-                [volunteer_id, registration.registration_id]
-            );
-
-            console.log('✅ Volunteer action recorded successfully:', actionResult.rows[0]);
-        } catch (actionError) {
-            console.error('❌ Failed to record volunteer action (but scan still successful):', actionError);
-            // Don't fail the whole scan just because volunteer action failed
-        }
+        // F. Record Volunteer Action WITH floor/counter at time of scan
+        console.log('✅ Recording volunteer action...');
+        await db.query(
+            `INSERT INTO volunteer_actions (volunteer_id, registration_id, action, floor, counter) 
+             VALUES ($1, $2, 'scan', $3, $4)`,
+            [volunteer_id, registration.registration_id, volunteer.current_floor, volunteer.current_counter]
+        );
 
         console.log('✅ Scan completed successfully');
         res.json({ message: "Scan successful", student_id: registration.student_id });
@@ -136,6 +151,7 @@ router.post('/scan', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
 
 
 
