@@ -90,7 +90,7 @@ const [volunteerAssignment, setVolunteerAssignment] = useState<{floor: string, c
                     <div className="text-end">
                       <div className="small text-success fw-semibold">{scan.counter_name}</div>
                       <div className="small text-muted">
-                        {new Date(scan.scanned_at).toLocaleTimeString([], {
+                        {new Date(scan.scanned_at).toLocaleTimeString('en-IN', {
                           hour: '2-digit', 
                           minute: '2-digit',
                           timeZone: 'Asia/Kolkata'
