@@ -6,7 +6,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
-const GOOGLE_CLIENT_ID = "439833438409-4202mnve67eqcs7m632huoficrvgteti.apps.googleusercontent.com"; 
+const GOOGLE_CLIENT_ID = "997232015364-urvnif0r9aacvtlslfu1kurbrps9jb0h.apps.googleusercontent.com"; 
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
