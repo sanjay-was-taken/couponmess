@@ -181,8 +181,13 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
                           <td><span className="badge bg-light text-dark border">{scan.batch}</span></td>
                           <td>{scan.counter_name}</td>
                           <td className="text-muted small">
-                            {new Date(scan.scanned_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            {new Date(scan.scanned_at).toLocaleTimeString('en-IN', {
+                              hour: '2-digit', 
+                              minute: '2-digit',
+                              timeZone: 'Asia/Kolkata'
+                            })}
                           </td>
+
                         </tr>
                       ))}
                     </tbody>
