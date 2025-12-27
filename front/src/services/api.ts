@@ -85,6 +85,16 @@ export const eventsApi = {
 
   deleteVolunteer: (volunteerId: number) => 
   request(`/volunteers/${volunteerId}`, { method: 'DELETE' }),
+
+getEventSlots: (eventId: number) => 
+    request(`/events/${eventId}/slots`),
+
+  updateVolunteerAssignment: (volunteerId: number, assignment: { floor: string; counter: string }) => 
+    request(`/events/volunteers/${volunteerId}/assignment`, { 
+      method: 'PATCH', 
+      body: JSON.stringify(assignment) 
+    }),
+  
 };
 
 // ==========================================

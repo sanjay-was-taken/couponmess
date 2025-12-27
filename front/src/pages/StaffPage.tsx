@@ -4,8 +4,10 @@ import { QrScanner } from '../components/QrScanner';
 import { useAuth } from '../context/AuthContext';
 import ScanResult from '../components/ScanResult';
 import VolunteerStatsModal from '../components/VolunteerStatsModal'; 
-import { CalendarEvent, ChevronRight } from 'react-bootstrap-icons';
+import { CalendarEvent} from 'react-bootstrap-icons';
 import { registrationApi, eventsApi } from '../services/api';
+import VolunteerAssignmentModal from '../components/VolunteerAssignmentModal';
+
 
 // Add this interface
 interface ScanLog {
@@ -21,6 +23,9 @@ const RecentScansSection: React.FC<{ eventId: number }> = ({ eventId }) => {
   const [recentScans, setRecentScans] = useState<ScanLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+const [volunteerAssignment, setVolunteerAssignment] = useState<{floor: string, counter: string} | null>(null);
+
 
   useEffect(() => {
     const fetchRecentScans = async () => {
@@ -43,6 +48,7 @@ const RecentScansSection: React.FC<{ eventId: number }> = ({ eventId }) => {
       fetchRecentScans();
     }
   }, [eventId]);
+
 
   if (loading) {
     return (
@@ -124,6 +130,9 @@ export const StaffPage = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<{id: number, name: string} | null>(null);
+  // --- Assignment State ---
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [volunteerAssignment, setVolunteerAssignment] = useState<{floor: string, counter: string} | null>(null);
 
   // 1. Fetch Active Events (Using Service Layer)
  // Replace the useEffect that fetches events with this:
@@ -159,6 +168,41 @@ useEffect(() => {
         fetchCurrentEvent();
     }
 }, [user]);
+
+// Check if volunteer needs assignment
+useEffect(() => {
+  const volunteerUser = user as any;
+  if (volunteerUser && volunteerUser.role === 'volunteer') {
+    // Check if volunteer has current assignment
+    if (!volunteerUser.current_floor || !volunteerUser.current_counter) {
+      setShowAssignmentModal(true);
+    } else {
+      setVolunteerAssignment({
+        floor: volunteerUser.current_floor,
+        counter: volunteerUser.current_counter
+      });
+    }
+  }
+}, [user]);
+
+
+// Check if volunteer needs assignment
+useEffect(() => {
+  const volunteerUser = user as any;
+  if (volunteerUser && volunteerUser.role === 'volunteer') {
+    // Check if volunteer has current assignment
+    if (!volunteerUser.current_floor || !volunteerUser.current_counter) {
+      setShowAssignmentModal(true);
+    } else {
+      setVolunteerAssignment({
+        floor: volunteerUser.current_floor,
+        counter: volunteerUser.current_counter
+      });
+    }
+  }
+}, [user]);
+
+
 {!showScanner && !loading && (
     <div className="mt-4">
         <h5 className="fw-bold mb-3 text-muted border-bottom pb-2">Current Event</h5>
@@ -183,6 +227,12 @@ useEffect(() => {
       setSelectedEvent({ id: event.event_id, name: event.name });
       setShowStatsModal(true);
   };
+  // 3. Handle Assignment Completion
+  const handleAssignmentComplete = (assignment: {floor: string, counter: string}) => {
+    setVolunteerAssignment(assignment);
+    setShowAssignmentModal(false);
+  };
+
 
   // 3. Handle Scan (Using Service Layer)
  const handleScanSuccess = async (decodedText: string) => {
@@ -355,6 +405,16 @@ useEffect(() => {
         eventId={selectedEvent?.id || null}
         eventName={selectedEvent?.name || ''}
       />
+
+      {/* ASSIGNMENT MODAL */}
+      <VolunteerAssignmentModal
+        show={showAssignmentModal}
+        onAssignmentComplete={handleAssignmentComplete}
+        volunteerId={(user as any)?.id}
+        eventId={(user as any)?.event_id}
+        volunteerName={(user as any)?.name || 'Volunteer'}
+      />
+
 
     </Container>
   );
