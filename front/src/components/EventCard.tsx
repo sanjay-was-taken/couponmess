@@ -95,7 +95,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
             } else {
               return (
                 <QrButton 
-                  text="Get QR Code" 
+                  text=" Register and show QR Code" 
                   onClick={() => onGetQR(event.id)}
                   variant="get"
                 />
