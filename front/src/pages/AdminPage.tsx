@@ -337,71 +337,84 @@ const handleManageVolunteers = (event: EventData) => {
           </Card.Body>
         </Card>
 
-        {/* --- FLOOR CONFIG (Only for Create) --- */}
         {!editingEventId && (
-          <Card className="mb-4 shadow-sm border-0">
-            <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
-              <span>Floor Configuration</span>
-              <Button variant="outline-primary" size="sm" onClick={addFloor}>
-                <PlusCircle className="me-1"/> Add Floor
-              </Button>
-            </Card.Header>
-            <Card.Body>
-              {floors.map((floor, index) => (
-                <Card key={floor.id} className={`border ${index === floors.length - 1 ? 'mb-0' : 'mb-3'}`}>
-                  <Card.Body className="p-3">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h6 className="mb-0 fw-bold text-primary">Mess {index + 1}</h6>
-                      {floors.length > 1 && (
-                        <Button 
-                          variant="outline-danger" 
-                          size="sm" 
-                          onClick={() => removeFloor(floor.id)}
-                        >
-                          <Trash />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <Row className="g-3">
-                      <Col xs={12}>
-                        <Form.Label className="small fw-bold text-muted">FLOOR NAME</Form.Label>
-                        <Form.Control 
-                          type="text" 
-                          value={floor.floorName} 
-                          onChange={(e) => updateFloor(floor.id, 'floorName', e.target.value)} 
-                          placeholder="e.g., 1st Floor, Ground Floor"
-                          required 
-                        />
-                      </Col>
-                      
-                      <Col xs={6}>
-                        <Form.Label className="small fw-bold text-muted">TOTAL COUNTERS</Form.Label>
-                        <Form.Control 
-                          type="number" 
-                          min={1} 
-                          value={floor.counterCount} 
-                          onChange={(e) => updateFloor(floor.id, 'counterCount', parseInt(e.target.value))} 
-                        />
-                      </Col>
-                      
-                      <Col xs={6}>
-                        <Form.Label className="small fw-bold text-muted">CAPACITY (PER COUNTER)</Form.Label>
-                        <Form.Control 
-                          type="number" 
-                          min={1}
-                          value={floor.capacityPerCounter} 
-                          onChange={(e) => updateFloor(floor.id, 'capacityPerCounter', parseInt(e.target.value))} 
-                        />
-                      </Col>
-                    </Row>
-                  </Card.Body>
-                </Card>
-              ))}
-            </Card.Body>
-          </Card>
+  <Card className="mb-4 shadow-sm border-0">
+    <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+      <span>Floor Configuration</span>
+      <Button variant="outline-primary" size="sm" onClick={addFloor}>
+        <PlusCircle className="me-1"/> Add Floor
+      </Button>
+    </Card.Header>
+    <Card.Body className="p-0">
+      <div className="table-responsive">
+        <Table className="mb-0">
+          <thead className="bg-light">
+            <tr>
+              <th className="fw-bold text-muted small" style={{ minWidth: '150px' }}>FLOOR NAME</th>
+              <th className="fw-bold text-muted small text-center">COUNTERS</th>
+              <th className="fw-bold text-muted small text-center">CAPACITY</th>
+              <th className="fw-bold text-muted small text-center" style={{ minWidth: '80px' }}>ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            {floors.map((floor, index) => (
+              <tr key={floor.id}>
+                <td className="align-middle">
+                  <Form.Control 
+                    type="text" 
+                    value={floor.floorName} 
+                    onChange={(e) => updateFloor(floor.id, 'floorName', e.target.value)} 
+                    placeholder={`Mess ${index + 1}`}
+                    required 
+                    size="sm"
+                    style={{ minWidth: '140px' }}
+                  />
+                </td>
 
-        )}
+                <td className="align-middle text-center">
+                  <Form.Control 
+                    type="number" 
+                    min={1} 
+                    value={floor.counterCount} 
+                    onChange={(e) => updateFloor(floor.id, 'counterCount', parseInt(e.target.value))} 
+                    size="sm"
+                    style={{ width: '80px', margin: '0 auto' }}
+                  />
+                </td>
+                <td className="align-middle text-center">
+                  <Form.Control 
+                    type="number" 
+                    min={1}
+                    value={floor.capacityPerCounter} 
+                    onChange={(e) => updateFloor(floor.id, 'capacityPerCounter', parseInt(e.target.value))} 
+                    size="sm"
+                    style={{ width: '80px', margin: '0 auto' }}
+                  />
+                </td>
+                <td className="align-middle text-center" style={{ minWidth: '80px' }}>
+                {floors.length > 1 ? (
+                  <Button 
+                    variant="outline-danger" 
+                    size="sm" 
+                    onClick={() => removeFloor(floor.id)}
+                  >
+                    <Trash />
+                  </Button>
+                ) : (
+                  <span className="text-muted">-</span>
+                )}
+              </td>
+
+
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+    </Card.Body>
+  </Card>
+)}
+
 
         <Button variant={editingEventId ? "warning" : "success"} size="lg" type="submit" className="w-100 mb-5" disabled={loading} style={!editingEventId ? { backgroundColor: colors.primary.main } : {}}>
           {loading ? <Spinner animation="border" size="sm" /> : (editingEventId ? 'Update Event' : 'Create Event')}
