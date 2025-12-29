@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { QRCodeSVG } from 'qrcode.react'; 
-import { GeoAltFill, ClockFill } from 'react-bootstrap-icons'; 
+import { ClockFill } from 'react-bootstrap-icons'; // Removed GeoAltFill
 
 interface QRCodeModalProps {
   show: boolean;
@@ -24,7 +24,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ show, onHide, eventName, qrTo
       <Modal.Body className="text-center p-4">
         <h5 className="mb-4 text-success fw-bold">{eventName}</h5>
         
-        {/* QR Code Container - Added 'mb-4' for spacing below */}
+        {/* QR Code Container */}
         <div className="p-3 border rounded d-inline-block bg-white shadow-sm mb-4">
           <QRCodeSVG 
             value={qrToken} 
@@ -34,17 +34,19 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ show, onHide, eventName, qrTo
           />
         </div>
         
-        {/* Slot Details Box */}
+        {/* Slot Details Box - Updated to show TIME ONLY */}
         {slotDetails && (
           <div className="bg-light p-3 rounded mb-3 border d-inline-block w-100">
-            <div className="row">
-              
-              <div className="col-6">
-                <small className="text-muted d-block text-uppercase fw-bold" style={{fontSize: '0.7rem'}}>Time</small>
-                <div className="text-dark fw-bold">
-                  <ClockFill className="me-1 text-primary" /> 
-                  {slotDetails.time}
-                </div>
+            {/* Removed the Grid System (Rows/Cols) since we only have one item now.
+                Centered the Time display.
+            */}
+            <div>
+              <small className="text-muted d-block text-uppercase fw-bold" style={{fontSize: '0.75rem'}}>
+                Assigned Time
+              </small>
+              <div className="text-dark fw-bold fs-5 mt-1">
+                <ClockFill className="me-2 text-primary" /> 
+                {slotDetails.time}
               </div>
             </div>
           </div>
