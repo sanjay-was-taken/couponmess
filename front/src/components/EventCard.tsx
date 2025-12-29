@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from 'react-bootstrap';
-import { CalendarEvent } from 'react-bootstrap-icons'; // Removed Clock, GeoAlt
+import { CalendarEvent, Clock, GeoAlt } from 'react-bootstrap-icons'; // Import extra icons
 import QrButton from './common/QrButton';
 
 export interface EventData {
@@ -8,14 +8,14 @@ export interface EventData {
   title: string;
   description: string;
   validDate: string;
-  // We keep this in the interface to prevent type errors if passed, 
-  // but we won't render it.
   assignedSlot?: {
     floor: string;
     time: string;
   };
+  // 🆕 Add registration status
   registrationStatus?: 'not_registered' | 'registered' | 'served';
 }
+
 
 interface EventCardProps {
   event: EventData;
@@ -38,55 +38,89 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
         </Card.Text>
         
         {/* Date Info */}
-        <div className="d-flex align-items-center text-muted small mb-4">
+        <div className="d-flex align-items-center text-muted small mb-3">
           <CalendarEvent className="me-2" />
           <span>Valid: {event.validDate}</span>
         </div>
 
-        {/* REMOVED: The section displaying assignedSlot (Floor/Time) 
-           is deleted as requested.
-        */}
+        {/* Only show this green box if the student has a slot */}
+        {event.assignedSlot && (
+          <div 
+            className="mt-auto mb-3 p-3 rounded" 
+            style={{ backgroundColor: '#e8f5e9', border: '1px solid #c8e6c9' }}
+          >
+            <div className="d-flex align-items-center mb-1 text-success fw-bold" style={{ fontSize: '0.9rem' }}>
+              <GeoAlt className="me-2" /> {event.assignedSlot.floor}
+            </div>
+            <div className="d-flex align-items-center text-success" style={{ fontSize: '0.9rem' }}>
+              <Clock className="me-2" /> {event.assignedSlot.time}
+            </div>
+          </div>
+        )}
         
         <div className="mt-auto">
-          {(() => {
-            // 1. Case: Served
-            if (event.registrationStatus === 'served') {
-              return (
-                <QrButton 
-                  text="You have been served" 
-                  onClick={() => {}} 
-                  variant="claimed"
-                  disabled={true}
-                />
-              );
-            } 
-            // 2. Case: Registered (Show QR)
-            // We check status OR if a slot exists (backward compatibility)
-            else if (event.registrationStatus === 'registered' || event.assignedSlot) {
-              return (
-                <QrButton 
-                  text="Show QR Code" 
-                  onClick={() => onGetQR(event.id)}
-                  variant="show"
-                />
-              );
-            } 
-            // 3. Case: Not Registered (Get QR)
-            else {
-              return (
-                <QrButton 
-                  text="Get QR Code" 
-                  onClick={() => onGetQR(event.id)}
-                  variant="get"
-                />
-              );
-            }
-          })()}
-        </div>
+  {(() => {
+    // Determine button state based on registration status
+    if (event.registrationStatus === 'served') {
+      return (
+        <QrButton 
+          text="You have been served " 
+          onClick={() => {}} // No action needed
+          variant="claimed"
+          disabled={true}
+        />
+      );
+    } else if (event.assignedSlot) {
+      return (
+        <QrButton 
+          text="Show QR Code" 
+          onClick={() => onGetQR(event.id)}
+          variant="show"
+        />
+      );
+    } else {
+      return (
+        <QrButton 
+          text="Get QR Code" 
+          onClick={() => onGetQR(event.id)}
+          variant="get"
+        />
+      );
+    }
+  })()}
+</div>
 
+        
       </Card.Body>
     </Card>
   );
 };
 
 export default EventCard;
+
+{/*
+    to use this component
+
+import this inside
+
+import EventCard from './components/EventCard';
+import type { EventData } from './components/EventCard';
+    
+inside app function
+const mockEvent: EventData = {
+    id: "1",
+    title: "Onam Special Lunch",
+    description: "Traditional Onam Sadhya with special dishes",
+    validDate: "Sep 10, 2025"
+  };
+
+  // 3. Create a mock function for the button
+  const handleTestClick = (eventId: string) => {
+    alert(`Button clicked for event ID: ${eventId}`);
+  };
+
+
+  inside return
+  <EventCard event={mockEvent} onGetQR={handleTestClick} />
+  
+    */}
