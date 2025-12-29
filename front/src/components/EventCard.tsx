@@ -13,7 +13,7 @@ export interface EventData {
     time: string;
   };
   registrationStatus?: 'not_registered' | 'registered' | 'served';
-  servedAt?: string | null; // <--- NEW FIELD for the timestamp
+  servedAt?: string | null; 
 }
 
 interface EventCardProps {
@@ -27,9 +27,11 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
   const getServedTimeStr = (timeStr?: string | null) => {
     if (!timeStr) return '';
     const date = new Date(timeStr);
-    // Check if valid date, otherwise try manual parse or return empty
     if (isNaN(date.getTime())) return ''; 
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // FIX: Replace normal space with non-breaking space (\u00A0)
+    // This ensures "06:05 PM" stays together and prevents the "PM" from hanging on a new line
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(' ', '\u00A0');
   };
 
   return (
