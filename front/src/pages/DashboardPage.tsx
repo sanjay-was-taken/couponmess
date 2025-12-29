@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import EventCard from '../components/EventCard'; // The existing Active Card
+import EventCard from '../components/EventCard'; 
 import type { EventData } from '../components/EventCard';
 import QRCodeModal from '../components/QRCodeModal'; 
 import { useAuth } from '../context/AuthContext';
@@ -19,10 +19,9 @@ interface BackendEvent {
   floor: string | null;
   time_start: string | null;
   time_end: string | null;
-  served_at: string | null; // <--- NEW FIELD NEEDED FROM BACKEND
+  served_at: string | null;
 }
 
-// --- NEW COMPONENT: PAST EVENT CARD ---
 // --- FIXED COMPONENT: PAST EVENT CARD ---
 const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
   const formatDate = (dateStr: string) => {
@@ -36,10 +35,8 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
     return new Date(timeStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // 🔧 FIX: Use proper if-else logic instead of multiple conditions
   const renderStatus = () => {
     if (event.registration_status === 'served') {
-      // Case 1: Served (Success)
       return (
         <div className="d-flex align-items-center text-success">
           <CheckCircleFill className="me-2" size={20} />
@@ -52,7 +49,6 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
         </div>
       );
     } else if (event.registration_status === 'registered') {
-      // Case 2: Registered but Missed (Failure)
       return (
         <div className="d-flex align-items-center text-danger">
           <XCircleFill className="me-2" size={20} />
@@ -63,7 +59,6 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
         </div>
       );
     } else {
-      // Case 3: Did not Register
       return (
         <div className="d-flex align-items-center text-secondary">
           <ExclamationCircleFill className="me-2" size={20} />
@@ -94,18 +89,16 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
   );
 };
 
-
-
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   
   // --- UI State ---
   const [activeEvents, setActiveEvents] = useState<EventData[]>([]);
-  const [pastEvents, setPastEvents] = useState<BackendEvent[]>([]); // Store raw backend data for past
+  const [pastEvents, setPastEvents] = useState<BackendEvent[]>([]); 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // --- View Filter State (Dropdown) ---
+  // --- View Filter State ---
   const [viewFilter, setViewFilter] = useState<'active' | 'past'>('active');
 
   // --- Modal States ---
@@ -129,64 +122,58 @@ const DashboardPage: React.FC = () => {
 
   // --- 1. Fetch Events ---
   const fetchEvents = useCallback(async () => {
-  if (!user) return;
-  try {
-    setLoading(true);
-    
-    // 🆕 Use new endpoint that returns all events (active + past)
-    const data: BackendEvent[] = await eventsApi.getAllForStudent(user.user_id);
+    if (!user) return;
+    try {
+      setLoading(true);
+      
+      const data: BackendEvent[] = await eventsApi.getAllForStudent(user.user_id);
 
-    const activeList: EventData[] = [];
-    const pastList: BackendEvent[] = [];
+      const activeList: EventData[] = [];
+      const pastList: BackendEvent[] = [];
 
-    data.forEach(item => {
-      // 🆕 Filter by event status instead of date comparison
-      if (item.status === 'active') {
-        // --- Prepare Active Event Data ---
-        let slotInfo = undefined;
-        if (item.floor && item.time_start && item.time_end) {
-          const start = new Date(item.time_start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-          const end = new Date(item.time_end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-          slotInfo = { floor: item.floor, time: `${start} - ${end}` };
+      data.forEach(item => {
+        if (item.status === 'active') {
+          let slotInfo = undefined;
+          if (item.floor && item.time_start && item.time_end) {
+            const start = new Date(item.time_start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const end = new Date(item.time_end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            slotInfo = { floor: item.floor, time: `${start} - ${end}` };
+          }
+          
+          activeList.push({
+            id: item.event_id.toString(),
+            title: item.name,
+            description: item.description,
+            validDate: new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            assignedSlot: slotInfo,
+            registrationStatus: item.registration_status === 'served' ? 'served' : 
+                                item.registration_id ? 'registered' : 'not_registered',
+            servedAt: item.served_at 
+          });
+
+        } else if (item.status === 'closed') {
+          pastList.push(item);
         }
-        // In the fetchEvents function, when building activeList
-        activeList.push({
-          id: item.event_id.toString(),
-          title: item.name,
-          description: item.description,
-          validDate: new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-          assignedSlot: slotInfo,
-          registrationStatus: item.registration_status === 'served' ? 'served' : 
-                              item.registration_id ? 'registered' : 'not_registered',
-          servedAt: item.served_at // <--- ADD THIS LINE to pass the data
-        });
+      });
 
-      } else if (item.status === 'closed') {
-        // --- Prepare Past Event Data ---
-        pastList.push(item);
-      }
-    });
+      pastList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    // Sort past events (newest first)
-    pastList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setActiveEvents(activeList);
+      setPastEvents(pastList);
 
-    setActiveEvents(activeList);
-    setPastEvents(pastList);
-
-  } catch (err) {
-    console.error(err);
-    setError('Could not load events.');
-  } finally {
-    setLoading(false);
-  }
-}, [user]);
-
+    } catch (err) {
+      console.error(err);
+      setError('Could not load events.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
 
-  // --- 2. Handle Get QR ---
+  // --- Handlers ---
   const handleGetQR = async (eventId: string) => {
     if (!user) return;
     setSelectedEventId(eventId);
@@ -212,14 +199,12 @@ const DashboardPage: React.FC = () => {
     setApiErrorMessage("");
   };
 
-  // --- Render Loading ---
   if (loading && activeEvents.length === 0 && pastEvents.length === 0) return (
     <div className="d-flex justify-content-center align-items-center vh-100">
       <Spinner animation="border" variant="success" />
     </div>
   );
 
-  // --- Render Dashboard ---
   return (
     <Container className="py-5">
       
@@ -239,8 +224,8 @@ const DashboardPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Control Header: Title + Dropdown */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      {/* Control Header: Title + Dropdown (RESPONSIVE FIX APPLIED HERE) */}
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-3">
         <div className="d-flex align-items-center">
           <h4 className="fw-bold mb-0 me-3">
             {viewFilter === 'active' ? 'Upcoming Meals' : 'Past History'}
@@ -250,21 +235,22 @@ const DashboardPage: React.FC = () => {
           </Badge>
         </div>
 
-        {/* 👇 THE DROPDOWN MENU */}
-        <Form.Select 
-          value={viewFilter} 
-          onChange={(e) => setViewFilter(e.target.value as 'active' | 'past')}
-          style={{ width: '180px', fontWeight: 'bold' }}
-          className="shadow-sm border-success"
-        >
-          <option value="active">Active Events</option>
-          <option value="past">Past Events</option>
-        </Form.Select>
+        {/* Dropdown Menu - Full width on mobile, fixed width on desktop */}
+        <div className="w-100 w-sm-auto">
+          <Form.Select 
+            value={viewFilter} 
+            onChange={(e) => setViewFilter(e.target.value as 'active' | 'past')}
+            className="shadow-sm border-success w-100"
+            style={{ fontWeight: 'bold', minWidth: '180px' }}
+          >
+            <option value="active">Active Events</option>
+            <option value="past">Past Events</option>
+          </Form.Select>
+        </div>
       </div>
       
       {/* CONTENT AREA */}
       {viewFilter === 'active' ? (
-        // --- ACTIVE EVENTS GRID (Existing) ---
         <Row className="g-4">
           {activeEvents.length === 0 ? (
             <div className="text-center py-5 bg-light rounded-3">
@@ -282,7 +268,6 @@ const DashboardPage: React.FC = () => {
           )}
         </Row>
       ) : (
-        // --- PAST EVENTS GRID (New) ---
         <Row className="g-4">
           {pastEvents.length === 0 ? (
             <div className="text-center py-5 bg-light rounded-3">
@@ -299,7 +284,7 @@ const DashboardPage: React.FC = () => {
         </Row>
       )}
 
-      {/* QR Success Modal */}
+      {/* Modals */}
       <QRCodeModal 
         show={showQrModal}
         onHide={handleCloseQrModal}
@@ -308,7 +293,6 @@ const DashboardPage: React.FC = () => {
         slotDetails={selectedEvent?.assignedSlot}
       />
 
-      {/* Error Modal */}
       <Modal show={showErrorModal} onHide={handleCloseErrorModal} centered>
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="text-danger d-flex align-items-center">
