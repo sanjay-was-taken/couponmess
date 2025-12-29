@@ -60,13 +60,13 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
         color={iconColor}
       />
 
-      {/* Title */}
-      <h1 className="mt-4" style={{ fontWeight: 'bold' }}>
+      {/* Title - Added text-center */}
+      <h1 className="mt-4 text-center" style={{ fontWeight: 'bold' }}>
         {result.title}
       </h1>
 
-      {/* Message */}
-      <p className="text-secondary h5 mt-2">
+      {/* Message - Added text-center and padding */}
+      <p className="text-secondary h5 mt-2 text-center px-3">
         {result.message}
       </p>
 
@@ -75,7 +75,7 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
         variant="success" 
         size="lg"
         className="mt-5"
-        onClick={onScanNext} // This calls the function from the parent
+        onClick={onScanNext} 
       >
         Scan Next
       </Button>
@@ -84,8 +84,6 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
 };
 
 export default ScanResult;
-
-
 
 {/*
 to use this component 
