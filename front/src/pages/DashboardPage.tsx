@@ -224,30 +224,33 @@ const DashboardPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Control Header: Title + Dropdown (RESPONSIVE FIX APPLIED HERE) */}
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-3">
-        <div className="d-flex align-items-center">
+      {/* Control Header: REPLACED with Grid System for better responsiveness */}
+      <Row className="align-items-center justify-content-between mb-4 g-3">
+        {/* Title + Badge */}
+        {/* xs={12} means full width on mobile, md="auto" means shrink to fit content on desktop */}
+        <Col xs={12} md="auto" className="d-flex align-items-center">
           <h4 className="fw-bold mb-0 me-3">
             {viewFilter === 'active' ? 'Upcoming Meals' : 'Past History'}
           </h4>
           <Badge bg={viewFilter === 'active' ? 'success' : 'secondary'} pill>
             {viewFilter === 'active' ? activeEvents.length : pastEvents.length}
           </Badge>
-        </div>
+        </Col>
 
-        {/* Dropdown Menu - Full width on mobile, fixed width on desktop */}
-        <div className="w-100 w-sm-auto">
+        {/* Dropdown */}
+        {/* xs={12} means full width on mobile, md="auto" means shrink to fit on desktop */}
+        <Col xs={12} md="auto">
           <Form.Select 
             value={viewFilter} 
             onChange={(e) => setViewFilter(e.target.value as 'active' | 'past')}
-            className="shadow-sm border-success w-100"
+            className="shadow-sm border-success"
             style={{ fontWeight: 'bold', minWidth: '180px' }}
           >
             <option value="active">Active Events</option>
             <option value="past">Past Events</option>
           </Form.Select>
-        </div>
-      </div>
+        </Col>
+      </Row>
       
       {/* CONTENT AREA */}
       {viewFilter === 'active' ? (
