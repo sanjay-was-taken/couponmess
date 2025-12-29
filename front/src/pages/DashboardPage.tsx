@@ -156,9 +156,9 @@ const DashboardPage: React.FC = () => {
           description: item.description,
           validDate: new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
           assignedSlot: slotInfo,
-          // 🆕 Add registration status
           registrationStatus: item.registration_status === 'served' ? 'served' : 
-                            item.registration_id ? 'registered' : 'not_registered'
+                              item.registration_id ? 'registered' : 'not_registered',
+          servedAt: item.served_at // <--- ADD THIS LINE to pass the data
         });
 
       } else if (item.status === 'closed') {
