@@ -38,13 +38,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ show, onHide, eventName, qrTo
         {slotDetails && (
           <div className="bg-light p-3 rounded mb-3 border d-inline-block w-100">
             <div className="row">
-              <div className="col-6 border-end">
-                <small className="text-muted d-block text-uppercase fw-bold" style={{fontSize: '0.7rem'}}>Floor</small>
-                <div className="text-dark fw-bold">
-                  <GeoAltFill className="me-1 text-primary" /> 
-                  {slotDetails.floor}
-                </div>
-              </div>
+              
               <div className="col-6">
                 <small className="text-muted d-block text-uppercase fw-bold" style={{fontSize: '0.7rem'}}>Time</small>
                 <div className="text-dark fw-bold">
