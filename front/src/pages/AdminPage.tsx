@@ -342,24 +342,65 @@ const handleManageVolunteers = (event: EventData) => {
           <Card className="mb-4 shadow-sm border-0">
             <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
               <span>Floor Configuration</span>
-              <Button variant="outline-primary" size="sm" onClick={addFloor}><PlusCircle className="me-1"/> Add Floor</Button>
+              <Button variant="outline-primary" size="sm" onClick={addFloor}>
+                <PlusCircle className="me-1"/> Add Floor
+              </Button>
             </Card.Header>
             <Card.Body>
-              <Row className="mb-2 text-muted fw-bold small text-uppercase">
-                <Col md={4}>Floor Name</Col><Col md={3}>Total Counters</Col><Col md={3}>Capacity (Per Counter)</Col><Col md={2}></Col>
-              </Row>
-              {floors.map((floor) => (
-                <div key={floor.id} className="mb-2 pb-2 border-bottom">
-                  <Row className="align-items-center">
-                    <Col md={4}><Form.Control type="text" value={floor.floorName} onChange={(e) => updateFloor(floor.id, 'floorName', e.target.value)} required /></Col>
-                    <Col md={3}><Form.Control type="number" min={1} value={floor.counterCount} onChange={(e) => updateFloor(floor.id, 'counterCount', parseInt(e.target.value))} /></Col>
-                    <Col md={3}><Form.Control type="number" value={floor.capacityPerCounter} onChange={(e) => updateFloor(floor.id, 'capacityPerCounter', parseInt(e.target.value))} /></Col>
-                    <Col md={2} className="text-end">{floors.length > 1 && <Button variant="outline-danger" size="sm" onClick={() => removeFloor(floor.id)}><Trash /></Button>}</Col>
-                  </Row>
-                </div>
+              {floors.map((floor, index) => (
+                <Card key={floor.id} className={`border ${index === floors.length - 1 ? 'mb-0' : 'mb-3'}`}>
+                  <Card.Body className="p-3">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="mb-0 fw-bold text-primary">Mess {index + 1}</h6>
+                      {floors.length > 1 && (
+                        <Button 
+                          variant="outline-danger" 
+                          size="sm" 
+                          onClick={() => removeFloor(floor.id)}
+                        >
+                          <Trash />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <Row className="g-3">
+                      <Col xs={12}>
+                        <Form.Label className="small fw-bold text-muted">FLOOR NAME</Form.Label>
+                        <Form.Control 
+                          type="text" 
+                          value={floor.floorName} 
+                          onChange={(e) => updateFloor(floor.id, 'floorName', e.target.value)} 
+                          placeholder="e.g., 1st Floor, Ground Floor"
+                          required 
+                        />
+                      </Col>
+                      
+                      <Col xs={6}>
+                        <Form.Label className="small fw-bold text-muted">TOTAL COUNTERS</Form.Label>
+                        <Form.Control 
+                          type="number" 
+                          min={1} 
+                          value={floor.counterCount} 
+                          onChange={(e) => updateFloor(floor.id, 'counterCount', parseInt(e.target.value))} 
+                        />
+                      </Col>
+                      
+                      <Col xs={6}>
+                        <Form.Label className="small fw-bold text-muted">CAPACITY (PER COUNTER)</Form.Label>
+                        <Form.Control 
+                          type="number" 
+                          min={1}
+                          value={floor.capacityPerCounter} 
+                          onChange={(e) => updateFloor(floor.id, 'capacityPerCounter', parseInt(e.target.value))} 
+                        />
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
               ))}
             </Card.Body>
           </Card>
+
         )}
 
         <Button variant={editingEventId ? "warning" : "success"} size="lg" type="submit" className="w-100 mb-5" disabled={loading} style={!editingEventId ? { backgroundColor: colors.primary.main } : {}}>
