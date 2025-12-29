@@ -47,8 +47,8 @@ const AdminPage: React.FC = () => {
   const [selectedEventForStats, setSelectedEventForStats] = useState<{id: number, name: string} | null>(null);
 
   // --- Volunteer Modal State ---
-const [showVolModal, setShowVolModal] = useState(false);
-const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name: string} | null>(null);
+  const [showVolModal, setShowVolModal] = useState(false);
+  const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name: string} | null>(null);
 
   // --- Helpers ---
   const formatTime = (isoString?: string) => {
@@ -71,11 +71,18 @@ const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name
     return checkDate < now;
   };
 
+  // 🆕 Helper to check if event has fully expired based on its End Time
+  const hasEventEnded = (event: EventData) => {
+      if (!event.time_end) return false;
+      const endTime = new Date(event.time_end).getTime();
+      const now = new Date().getTime();
+      return endTime < now;
+  };
+
   // --- API Actions ---
   const fetchEvents = async () => {
     setFetching(true);
     try {
-      //    API CALL: Get All Events
       const data = await eventsApi.getAll();
       setEvents(data);
     } catch (err) {
@@ -147,7 +154,6 @@ const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name
     if(!window.confirm(confirmMsg)) return;
 
     try {
-        //    API CALL: Update Status
         await eventsApi.update(editingEventId, { status: newStatus });
         
         setCurrentStatus(newStatus);
@@ -161,7 +167,6 @@ const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name
   const handleDelete = async (id: number) => {
     if(!window.confirm("Are you sure you want to permanently delete this event? This will remove all student registrations and logs.")) return;
     try {
-      //    API CALL: Delete Event
       await eventsApi.delete(id);
       
       setMessage({ type: 'success', text: 'Event deleted' });
@@ -170,27 +175,27 @@ const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name
       setMessage({ type: 'danger', text: 'Failed to delete' });
     }
   };
+
   const getTodayIST = () => {
-  const now = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-  const istDate = new Date(now.getTime() + istOffset);
-  return istDate.toISOString().split('T')[0];
-};
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; 
+    const istDate = new Date(now.getTime() + istOffset);
+    return istDate.toISOString().split('T')[0];
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // Validate date is not in the past
-  const selectedDate = new Date(eventDate);
-  const today = new Date(getTodayIST());
-  
-  if (selectedDate < today) {
-    setMessage({ 
-      type: 'danger', 
-      text: 'Cannot create events for past dates. Please select today or a future date.' 
-    });
-    return;
-  }
+    e.preventDefault();
+    
+    const selectedDate = new Date(eventDate);
+    const today = new Date(getTodayIST());
+    
+    if (selectedDate < today) {
+      setMessage({ 
+        type: 'danger', 
+        text: 'Cannot create events for past dates. Please select today or a future date.' 
+      });
+      return;
+    }
 
     const fullDate = `${eventDate}T00:00:00.000Z`;
     const fullStartTime = `${eventDate} ${startTime}:00`;
@@ -200,8 +205,6 @@ const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name
 
     try {
       if (editingEventId) {
-        // --- UPDATE ---
-        //    API CALL: Update Event
         await eventsApi.update(editingEventId, { 
             name: eventName, 
             description, 
@@ -214,19 +217,15 @@ const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name
         setMessage({ type: 'success', text: 'Event updated successfully!' });
         setEditingEventId(null);
       } else {
-        // --- CREATE ---
-        //    API CALL: Create Event
         const eventData = await eventsApi.create({ 
             name: eventName, 
             description, 
             date: fullDate 
         });
         
-        // Create Slots (Looping through floors)
         const slotPromises: Promise<any>[] = [];
         floors.forEach(floor => {
           for (let i = 1; i <= floor.counterCount; i++) {
-            //    API CALL: Create Slots
             slotPromises.push(eventsApi.createSlots(eventData.event_id, {
                 floor: floor.floorName,
                 counter: i,
@@ -240,7 +239,6 @@ const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name
         setMessage({ type: 'success', text: 'Event created successfully!' });
       }
       
-      // Reset Form
       setEventName(''); setDescription(''); setEventDate('');
       setFloors(defaultFloors);
       fetchEvents();
@@ -252,17 +250,15 @@ const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name
     }
   };
 
-  // --- Open Stats Modal ---
   const openStats = (event: EventData) => {
       setSelectedEventForStats({ id: event.event_id, name: event.name });
       setShowStats(true);
   };
 
-  // --- Open Volunteer Modal ---
-const handleManageVolunteers = (event: EventData) => {
+  const handleManageVolunteers = (event: EventData) => {
     setSelectedEventForVol({ id: event.event_id, name: event.name });
     setShowVolModal(true);
-};
+  };
 
   return (
     <Container className="py-4">
@@ -338,83 +334,80 @@ const handleManageVolunteers = (event: EventData) => {
         </Card>
 
         {!editingEventId && (
-  <Card className="mb-4 shadow-sm border-0">
-    <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
-      <span>Floor Configuration</span>
-      <Button variant="outline-primary" size="sm" onClick={addFloor}>
-        <PlusCircle className="me-1"/> Add Floor
-      </Button>
-    </Card.Header>
-    <Card.Body className="p-0">
-      <div className="table-responsive">
-        <Table className="mb-0">
-          <thead className="bg-light">
-            <tr>
-              <th className="fw-bold text-muted small" style={{ minWidth: '150px' }}>FLOOR NAME</th>
-              <th className="fw-bold text-muted small text-center">COUNTERS</th>
-              <th className="fw-bold text-muted small text-center">CAPACITY</th>
-              <th className="fw-bold text-muted small text-center" style={{ minWidth: '80px' }}>ACTION</th>
-            </tr>
-          </thead>
-          <tbody>
-            {floors.map((floor, index) => (
-              <tr key={floor.id}>
-                <td className="align-middle">
-                  <Form.Control 
-                    type="text" 
-                    value={floor.floorName} 
-                    onChange={(e) => updateFloor(floor.id, 'floorName', e.target.value)} 
-                    placeholder={`Mess ${index + 1}`}
-                    required 
-                    size="sm"
-                    style={{ minWidth: '140px' }}
-                  />
-                </td>
+          <Card className="mb-4 shadow-sm border-0">
+            <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+              <span>Floor Configuration</span>
+              <Button variant="outline-primary" size="sm" onClick={addFloor}>
+                <PlusCircle className="me-1"/> Add Floor
+              </Button>
+            </Card.Header>
+            <Card.Body className="p-0">
+              <div className="table-responsive">
+                <Table className="mb-0">
+                  <thead className="bg-light">
+                    <tr>
+                      <th className="fw-bold text-muted small" style={{ minWidth: '150px' }}>FLOOR NAME</th>
+                      <th className="fw-bold text-muted small text-center">COUNTERS</th>
+                      <th className="fw-bold text-muted small text-center">CAPACITY</th>
+                      <th className="fw-bold text-muted small text-center" style={{ minWidth: '80px' }}>ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {floors.map((floor, index) => (
+                      <tr key={floor.id}>
+                        <td className="align-middle">
+                          <Form.Control 
+                            type="text" 
+                            value={floor.floorName} 
+                            onChange={(e) => updateFloor(floor.id, 'floorName', e.target.value)} 
+                            placeholder={`Mess ${index + 1}`}
+                            required 
+                            size="sm"
+                            style={{ minWidth: '140px' }}
+                          />
+                        </td>
 
-                <td className="align-middle text-center">
-                  <Form.Control 
-                    type="number" 
-                    min={1} 
-                    value={floor.counterCount} 
-                    onChange={(e) => updateFloor(floor.id, 'counterCount', parseInt(e.target.value))} 
-                    size="sm"
-                    style={{ width: '80px', margin: '0 auto' }}
-                  />
-                </td>
-                <td className="align-middle text-center">
-                  <Form.Control 
-                    type="number" 
-                    min={1}
-                    value={floor.capacityPerCounter} 
-                    onChange={(e) => updateFloor(floor.id, 'capacityPerCounter', parseInt(e.target.value))} 
-                    size="sm"
-                    style={{ width: '80px', margin: '0 auto' }}
-                  />
-                </td>
-                <td className="align-middle text-center" style={{ minWidth: '80px' }}>
-                {floors.length > 1 ? (
-                  <Button 
-                    variant="outline-danger" 
-                    size="sm" 
-                    onClick={() => removeFloor(floor.id)}
-                  >
-                    <Trash />
-                  </Button>
-                ) : (
-                  <span className="text-muted">-</span>
-                )}
-              </td>
-
-
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </div>
-    </Card.Body>
-  </Card>
-)}
-
+                        <td className="align-middle text-center">
+                          <Form.Control 
+                            type="number" 
+                            min={1} 
+                            value={floor.counterCount} 
+                            onChange={(e) => updateFloor(floor.id, 'counterCount', parseInt(e.target.value))} 
+                            size="sm"
+                            style={{ width: '80px', margin: '0 auto' }}
+                          />
+                        </td>
+                        <td className="align-middle text-center">
+                          <Form.Control 
+                            type="number" 
+                            min={1}
+                            value={floor.capacityPerCounter} 
+                            onChange={(e) => updateFloor(floor.id, 'capacityPerCounter', parseInt(e.target.value))} 
+                            size="sm"
+                            style={{ width: '80px', margin: '0 auto' }}
+                          />
+                        </td>
+                        <td className="align-middle text-center" style={{ minWidth: '80px' }}>
+                        {floors.length > 1 ? (
+                          <Button 
+                            variant="outline-danger" 
+                            size="sm" 
+                            onClick={() => removeFloor(floor.id)}
+                          >
+                            <Trash />
+                          </Button>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
+                      </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </Card.Body>
+          </Card>
+        )}
 
         <Button variant={editingEventId ? "warning" : "success"} size="lg" type="submit" className="w-100 mb-5" disabled={loading} style={!editingEventId ? { backgroundColor: colors.primary.main } : {}}>
           {loading ? <Spinner animation="border" size="sm" /> : (editingEventId ? 'Update Event' : 'Create Event')}
@@ -437,38 +430,49 @@ const handleManageVolunteers = (event: EventData) => {
               </tr>
             </thead>
             <tbody>
-              {events.map(event => (
-                <tr key={event.event_id}>
-                  <td>
-                    {/* Clickable Event Name triggers Stats Modal */}
-                    <div 
-                        className="fw-bold text-primary" 
-                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                        onClick={() => openStats(event)}
-                        title="Click to view stats"
-                    >
-                        {event.name} <BarChartFill className="ms-1" size={14}/>
-                    </div>
-                    <small className="text-muted">{event.description}</small>
-                  </td>
-                  <td>{formatDate(event.date)}</td>
-                  <td><span className="text-muted small fw-bold">{formatTime(event.time_start)} - {formatTime(event.time_end)}</span></td>
-                  <td>{getStatusBadge(event)}</td>
-                  <td className="text-end">
-                    <Button 
-                      variant="outline-dark" 
-                      size="sm" 
-                      className="me-2" 
-                      title="Manage Staff"
-                      onClick={() => handleManageVolunteers(event)}
-                    >
-                      <PersonBadge /> Staff
-                    </Button>
-                    <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEditClick(event)}><PencilSquare /> Edit</Button>
-                    <Button variant="outline-danger" size="sm" onClick={() => handleDelete(event.event_id)}><Trash /> Delete</Button>
-                  </td>
-                </tr>
-              ))}
+              {events.map(event => {
+                const isExpired = hasEventEnded(event); // Check if time has passed
+
+                return (
+                  <tr key={event.event_id}>
+                    <td>
+                      <div 
+                          className="fw-bold text-primary" 
+                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                          onClick={() => openStats(event)}
+                          title="Click to view stats"
+                      >
+                          {event.name} <BarChartFill className="ms-1" size={14}/>
+                      </div>
+                      <small className="text-muted">{event.description}</small>
+                    </td>
+                    <td>{formatDate(event.date)}</td>
+                    <td><span className="text-muted small fw-bold">{formatTime(event.time_start)} - {formatTime(event.time_end)}</span></td>
+                    <td>{getStatusBadge(event)}</td>
+                    <td className="text-end">
+                      {isExpired ? (
+                        // If Expired, show simple label
+                        <span className="text-muted small fst-italic">Expired</span>
+                      ) : (
+                        // If Active or Closed but not expired, show buttons
+                        <>
+                          <Button 
+                            variant="outline-dark" 
+                            size="sm" 
+                            className="me-2" 
+                            title="Manage Staff"
+                            onClick={() => handleManageVolunteers(event)}
+                          >
+                            <PersonBadge /> Staff
+                          </Button>
+                          <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEditClick(event)}><PencilSquare /> Edit</Button>
+                          <Button variant="outline-danger" size="sm" onClick={() => handleDelete(event.event_id)}><Trash /> Delete</Button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </Table>
         </Card>
@@ -482,7 +486,6 @@ const handleManageVolunteers = (event: EventData) => {
         eventName={selectedEventForStats?.name || ''} 
       />
 
-      {/* 🆕 ADD THIS MODAL: */}
       {/* --- VOLUNTEER MODAL COMPONENT --- */}
       <VolunteerManagerModal 
         show={showVolModal}
