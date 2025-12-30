@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Table, Alert, InputGroup, Badge } from 'react-bootstrap';
+import { Modal, Button, Form, Table, Alert, InputGroup, Badge, Toast, ToastContainer } from 'react-bootstrap';
 import { PersonPlusFill, Trash, Clipboard, Check } from 'react-bootstrap-icons';
 import { eventsApi } from '../services/api';
 
@@ -29,6 +29,10 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
   // Success State (To show credentials after creation)
   const [createdCreds, setCreatedCreds] = useState<{u: string, p: string} | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // Toast State
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // 1. Load Volunteers when modal opens
   useEffect(() => {
@@ -85,13 +89,27 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
     }
   };
 
-  const handleDelete = async (volId: number) => {
-    if(!window.confirm("Remove this volunteer? They won't be able to login.")) return;
+  const handleDelete = async (volId: number, volName: string) => {
+    // 1. Show Toast immediately
+    setToastMessage(`Deleting volunteer "${volName}"...`);
+    setShowToast(true);
+
+    // 2. Optimistic UI Update (Remove from list instantly)
+    const previousVolunteers = [...volunteers]; // Backup in case of error
+    setVolunteers(volunteers.filter(v => v.id !== volId));
+
     try {
+      // 3. Actual API Call
       await eventsApi.deleteVolunteer(volId);
-      fetchVolunteers();
+      
+      // No need to fetchVolunteers() if the optimistic update worked, 
+      // but we can do it silently to be sure.
+      // await fetchVolunteers(); 
     } catch (err) {
       console.error(err);
+      // Revert UI if failed
+      setVolunteers(previousVolunteers);
+      setToastMessage(`Failed to delete "${volName}".`);
     }
   };
 
@@ -105,101 +123,117 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Manage Staff: <span className="text-primary">{eventName}</span></Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        
-        {/* --- CREATION FORM --- */}
-        <div className="bg-light p-3 rounded mb-4 border">
-            <h6 className="fw-bold mb-3"><PersonPlusFill className="me-2"/> Add New Volunteer</h6>
-            <Form onSubmit={handleCreate}>
-                <div className="row g-2">
-                    <div className="col-md-4">
-                        <Form.Control 
-                            placeholder="Name (e.g. John)" 
-                            value={newName} 
-                            onChange={e => setNewName(e.target.value)} 
-                            required 
-                        />
-                    </div>
-                    <div className="col-md-3">
-                        <InputGroup>
-                            <InputGroup.Text className="bg-white text-muted">@</InputGroup.Text>
+    <>
+      <Modal show={show} onHide={onHide} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Manage Staff: <span className="text-primary">{eventName}</span></Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          
+          {/* --- CREATION FORM --- */}
+          <div className="bg-light p-3 rounded mb-4 border">
+              <h6 className="fw-bold mb-3"><PersonPlusFill className="me-2"/> Add New Volunteer</h6>
+              <Form onSubmit={handleCreate}>
+                  <div className="row g-2">
+                      <div className="col-md-4">
+                          <Form.Control 
+                              placeholder="Name (e.g. John)" 
+                              value={newName} 
+                              onChange={e => setNewName(e.target.value)} 
+                              required 
+                          />
+                      </div>
+                      <div className="col-md-3">
+                          <InputGroup>
+                              <InputGroup.Text className="bg-white text-muted">@</InputGroup.Text>
+                              <Form.Control 
+                                  placeholder="Username" 
+                                  value={newUsername} 
+                                  onChange={e => setNewUsername(e.target.value)} 
+                                  required 
+                              />
+                          </InputGroup>
+                      </div>
+                      <div className="col-md-3">
                             <Form.Control 
-                                placeholder="Username" 
-                                value={newUsername} 
-                                onChange={e => setNewUsername(e.target.value)} 
-                                required 
-                            />
-                        </InputGroup>
-                    </div>
-                    <div className="col-md-3">
-                         <Form.Control 
-                                placeholder="Password" 
-                                value={newPassword} 
-                                onChange={e => setNewPassword(e.target.value)} 
-                                required 
-                            />
-                    </div>
-                    <div className="col-md-2">
-                        <Button variant="success" type="submit" className="w-100">Add</Button>
-                    </div>
-                </div>
-                <Form.Text className="text-muted small">
-                   Username and password are auto-generated for ease, but you can edit them.
-                </Form.Text>
-            </Form>
-        </div>
+                                  placeholder="Password" 
+                                  value={newPassword} 
+                                  onChange={e => setNewPassword(e.target.value)} 
+                                  required 
+                              />
+                      </div>
+                      <div className="col-md-2">
+                          <Button variant="success" type="submit" className="w-100">Add</Button>
+                      </div>
+                  </div>
+                  <Form.Text className="text-muted small">
+                     Username and password are auto-generated for ease, but you can edit them.
+                  </Form.Text>
+              </Form>
+          </div>
 
-        {/* --- SUCCESS MESSAGE (Copy Credentials) --- */}
-        {createdCreds && (
-            <Alert variant="success" className="d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>User Created!</strong> Share these details immediately:<br/>
-                    Username: <code className="fw-bold text-dark fs-6">{createdCreds.u}</code> &nbsp;|&nbsp; 
-                    Password: <code className="fw-bold text-dark fs-6">{createdCreds.p}</code>
-                </div>
-                <Button variant={copySuccess ? "outline-success" : "outline-dark"} size="sm" onClick={copyToClipboard}>
-                    {copySuccess ? <><Check/> Copied</> : <><Clipboard/> Copy info</>}
-                </Button>
-            </Alert>
-        )}
+          {/* --- SUCCESS MESSAGE (Copy Credentials) --- */}
+          {createdCreds && (
+              <Alert variant="success" className="d-flex justify-content-between align-items-center">
+                  <div>
+                      <strong>User Created!</strong> Share these details immediately:<br/>
+                      Username: <code className="fw-bold text-dark fs-6">{createdCreds.u}</code> &nbsp;|&nbsp; 
+                      Password: <code className="fw-bold text-dark fs-6">{createdCreds.p}</code>
+                  </div>
+                  <Button variant={copySuccess ? "outline-success" : "outline-dark"} size="sm" onClick={copyToClipboard}>
+                      {copySuccess ? <><Check/> Copied</> : <><Clipboard/> Copy info</>}
+                  </Button>
+              </Alert>
+          )}
 
-        {/* --- EXISTING LIST --- */}
-        <h6 className="fw-bold mt-4">Current Volunteers ({volunteers.length})</h6>
-        <Table hover size="sm" className="align-middle mt-2">
-            <thead className="bg-light">
-                <tr>
-                    <th>Name</th>
-                    <th>Username</th>
-                    <th>Status</th>
-                    <th className="text-end">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {volunteers.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center text-muted py-3">No volunteers assigned yet.</td></tr>
-                ) : (
-                    volunteers.map(v => (
-                        <tr key={v.id}>
-                            <td>{v.name}</td>
-                            <td><Badge bg="light" text="dark" className="border">@{v.username}</Badge></td>
-                            <td><Badge bg="success">Active</Badge></td>
-                            <td className="text-end">
-                                <Button variant="link" className="text-danger p-0" onClick={() => handleDelete(v.id)}>
-                                    <Trash/>
-                                </Button>
-                            </td>
-                        </tr>
-                    ))
-                )}
-            </tbody>
-        </Table>
+          {/* --- EXISTING LIST --- */}
+          <h6 className="fw-bold mt-4">Current Volunteers ({volunteers.length})</h6>
+          <Table hover size="sm" className="align-middle mt-2">
+              <thead className="bg-light">
+                  <tr>
+                      <th>Name</th>
+                      <th>Username</th>
+                      <th>Status</th>
+                      <th className="text-end">Action</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  {volunteers.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center text-muted py-3">No volunteers assigned yet.</td></tr>
+                  ) : (
+                      volunteers.map(v => (
+                          <tr key={v.id}>
+                              <td>{v.name}</td>
+                              <td><Badge bg="light" text="dark" className="border">@{v.username}</Badge></td>
+                              <td><Badge bg="success">Active</Badge></td>
+                              <td className="text-end">
+                                  <Button 
+                                    variant="link" 
+                                    className="text-danger p-0" 
+                                    onClick={() => handleDelete(v.id, v.name)}
+                                  >
+                                      <Trash/>
+                                  </Button>
+                              </td>
+                          </tr>
+                      ))
+                  )}
+              </tbody>
+          </Table>
 
-      </Modal.Body>
-    </Modal>
+        </Modal.Body>
+      </Modal>
+
+      {/* --- TOAST NOTIFICATION --- */}
+      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
+        <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="dark">
+          <Toast.Header>
+            <strong className="me-auto">Notification</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
+    </>
   );
 };
 
