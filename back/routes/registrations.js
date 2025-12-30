@@ -43,14 +43,13 @@ router.post('/', async (req, res) => {
         // Using NOW() at UTC + 5.5h logic matches the event auto-close logic
         const slots = await db.query(
             `SELECT slot_id FROM event_slots 
-             WHERE event_id = $1 
-             AND time_end > (NOW() AT TIME ZONE 'UTC' + interval '5 hours 30 minutes')`, 
+             WHERE event_id = $1`, 
             [event_id]
         );
 
         if (slots.rows.length === 0) {
             return res.status(404).json({ 
-                error: "Registration closed. No available slots or event has ended." 
+                error: "Registration closed. No slots configured for this event." 
             });
         }
 
