@@ -112,9 +112,9 @@ const VolunteerAssignmentModal: React.FC<VolunteerAssignmentModalProps> = ({
                 }}
                 required
               >
-                <option value="">Select Floor</option>
+                <option value="">Select Floor / Hostel</option>
                 {uniqueFloors.map(floor => (
-                  <option key={floor} value={floor}>Floor {floor}</option>
+                  <option key={floor} value={floor}>{floor}</option>
                 ))}
               </Form.Select>
             </Form.Group>
