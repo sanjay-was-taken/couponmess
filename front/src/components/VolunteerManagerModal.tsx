@@ -26,15 +26,16 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
-  // Success State (To show credentials after creation)
+  // Success State
   const [createdCreds, setCreatedCreds] = useState<{u: string, p: string} | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
   // Toast State
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastVariant, setToastVariant] = useState<'success' | 'danger'>('success');
 
-  // 1. Load Volunteers when modal opens
+  // 1. Load Volunteers
   useEffect(() => {
     if (show && eventId) {
       fetchVolunteers();
@@ -56,14 +57,12 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
     }
   };
 
-  // 2. Helper to auto-generate a username like "xmas_counter1"
   const generateSuggestedCredentials = () => {
     if (!eventName) return;
-    // Take first 4 chars of event name + random 3 digits
     const prefix = eventName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 4).toLowerCase();
     const randomSuffix = Math.floor(100 + Math.random() * 900);
     setNewUsername(`${prefix}_staff${randomSuffix}`);
-    setNewPassword(Math.random().toString(36).slice(-6)); // Random 6 char password
+    setNewPassword(Math.random().toString(36).slice(-6));
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -77,41 +76,44 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
         password: newPassword
       });
 
-      // Show the green box with credentials
       setCreatedCreds({ u: newUsername, p: newPassword });
-      
-      // Refresh list and reset form
       fetchVolunteers();
       setNewName('');
-      generateSuggestedCredentials(); // Prep for next one
+      generateSuggestedCredentials();
+      
+      setToastVariant('success');
+      setToastMessage('Volunteer added successfully');
+      setShowToast(true);
     } catch (err: any) {
-      alert(err.message || "Failed to create volunteer. Username might be taken.");
+      alert(err.message || "Failed to create volunteer.");
     }
   };
 
+  // 🔴 UPDATED DELETE FUNCTION
   const handleDelete = async (volId: number, volName: string) => {
-    // 1. Show Toast immediately
-    setToastMessage(`Deleting volunteer "${volName}"...`);
-    setShowToast(true);
-
-    // 2. Optimistic UI Update (Remove from list instantly)
-    // We keep a backup in case the API call fails later
-    const previousVolunteers = [...volunteers]; 
+    // 1. Optimistic Update (Remove instantly)
+    const previousVolunteers = [...volunteers];
     setVolunteers(prev => prev.filter(v => v.id !== volId));
 
     try {
-      // 3. Actual API Call
+      // 2. API Call
       await eventsApi.deleteVolunteer(volId);
       
-      // SUCCESS: Do nothing! The UI is already correct.
-      // We specifically DO NOT call fetchVolunteers() here to avoid race conditions 
-      // where the server returns the old list before the DB delete is fully committed.
+      // 3. Success Notification
+      setToastVariant('success');
+      setToastMessage(`Deleted ${volName} successfully.`);
+      setShowToast(true);
+
+    } catch (err: any) {
+      console.error("Delete failed:", err);
       
-    } catch (err) {
-      console.error(err);
-      // ERROR: Revert UI if the API call failed
+      // 4. FAILURE: Revert UI & Show Error
       setVolunteers(previousVolunteers);
-      setToastMessage(`Failed to delete "${volName}".`);
+      
+      setToastVariant('danger');
+      // Show the actual error from backend if possible
+      setToastMessage(`Could not delete: ${err.message || "Server Error"}`);
+      setShowToast(true);
     }
   };
 
@@ -132,7 +134,7 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
         </Modal.Header>
         <Modal.Body>
           
-          {/* --- CREATION FORM --- */}
+          {/* CREATION FORM */}
           <div className="bg-light p-3 rounded mb-4 border">
               <h6 className="fw-bold mb-3"><PersonPlusFill className="me-2"/> Add New Volunteer</h6>
               <Form onSubmit={handleCreate}>
@@ -174,11 +176,11 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
               </Form>
           </div>
 
-          {/* --- SUCCESS MESSAGE (Copy Credentials) --- */}
+          {/* CREDENTIALS ALERT */}
           {createdCreds && (
               <Alert variant="success" className="d-flex justify-content-between align-items-center">
                   <div>
-                      <strong>User Created!</strong> Share these details immediately:<br/>
+                      <strong>User Created!</strong> Share details:<br/>
                       Username: <code className="fw-bold text-dark fs-6">{createdCreds.u}</code> &nbsp;|&nbsp; 
                       Password: <code className="fw-bold text-dark fs-6">{createdCreds.p}</code>
                   </div>
@@ -188,7 +190,7 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
               </Alert>
           )}
 
-          {/* --- EXISTING LIST --- */}
+          {/* VOLUNTEER LIST */}
           <h6 className="fw-bold mt-4">Current Volunteers ({volunteers.length})</h6>
           <Table hover size="sm" className="align-middle mt-2">
               <thead className="bg-light">
@@ -226,9 +228,15 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
         </Modal.Body>
       </Modal>
 
-      {/* --- TOAST NOTIFICATION --- */}
+      {/* TOAST NOTIFICATION */}
       <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
-        <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="dark">
+        <Toast 
+            onClose={() => setShowToast(false)} 
+            show={showToast} 
+            delay={4000} 
+            autohide 
+            bg={toastVariant} // Dynamic background color
+        >
           <Toast.Header>
             <strong className="me-auto">Notification</strong>
           </Toast.Header>
