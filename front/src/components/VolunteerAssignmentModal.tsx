@@ -103,7 +103,7 @@ const VolunteerAssignmentModal: React.FC<VolunteerAssignmentModalProps> = ({
         ) : (
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Floor</Form.Label>
+              <Form.Label>Mess</Form.Label>
               <Form.Select 
                 value={selectedFloor} 
                 onChange={(e) => {
