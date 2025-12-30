@@ -396,6 +396,8 @@ router.get('/all-for-student', async (req, res) => {
                 FROM events e
                 LEFT JOIN registrations r ON e.event_id = r.event_id AND r.student_id = $1
                 LEFT JOIN event_slots s ON r.slot_id = s.slot_id
+                WHERE (e.status = 'closed') 
+                   OR (e.status = 'active' AND (s.time_end IS NULL OR s.time_end > timezone('Asia/Kolkata', NOW())))
                 ORDER BY e.date DESC, s.time_start DESC
             `;
             
@@ -404,12 +406,12 @@ router.get('/all-for-student', async (req, res) => {
         } else {
             res.status(400).json({ error: "Student ID required" });
         }
-
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error" });
     }
 });
+
 
 // GET SCAN HISTORY
 router.get('/:id/scan-history', async (req, res) => {
