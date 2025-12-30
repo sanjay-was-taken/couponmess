@@ -166,13 +166,25 @@ const AdminPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     if(!window.confirm("Are you sure you want to permanently delete this event? This will remove all student registrations and logs.")) return;
+    
+    // Set loading state to prevent double clicks
+    setLoading(true); 
+    
     try {
       await eventsApi.delete(id);
       
-      setMessage({ type: 'success', text: 'Event deleted' });
+      setMessage({ type: 'success', text: 'Event deleted successfully' });
+      
+      // Refresh list to show it's gone
       fetchEvents();
-    } catch (err) {
-      setMessage({ type: 'danger', text: 'Failed to delete' });
+    } catch (err: any) {
+      console.error("Delete failed:", err);
+      setMessage({ 
+        type: 'danger', 
+        text: err.message || 'Failed to delete event. Check console for details.' 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
