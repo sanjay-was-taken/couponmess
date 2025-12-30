@@ -26,7 +26,7 @@ const formatScanTime = (timeStr: string) => {
   // This handles the "Correct" database format
   const standardDate = new Date(timeStr);
   if (!isNaN(standardDate.getTime()) && timeStr.includes('T')) {
-     return standardDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+     return standardDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true ,timeZone: 'Asia/Kolkata'});
   }
 
   // 2. Fallback for "06:53 am" format (Raw Time String from DB)
