@@ -3,8 +3,15 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+
 
 const generateToken = () => crypto.randomBytes(16).toString('hex');
+const scanLimiter = rateLimit({
+    windowMs: 1000, // 1 second
+    max: 3, // Max 3 scans per second per IP
+    message: { error: "Too many scan attempts, please wait" }
+});
 
 // ==========================================
 // 1. REGISTER STUDENT (Auto-assigns Random Slot)
@@ -79,85 +86,104 @@ router.post('/', async (req, res) => {
 // ==========================================
 // 2. SCAN QR CODE (Volunteer Action)
 // ==========================================
-router.post('/scan', async (req, res) => {
+router.post('/scan', scanLimiter, async (req, res) => {
     const { qr_token, volunteer_id } = req.body;
+
+    // Input validation
+    if (!qr_token || !volunteer_id) {
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (typeof qr_token !== 'string' || qr_token.length !== 32) {
+        return res.status(400).json({ error: "Invalid QR token format" });
+    }
 
     console.log('=== SCAN REQUEST ===');
     console.log('QR Token:', qr_token);
     console.log('Volunteer ID:', volunteer_id);
 
+    const client = await db.pool.connect();
+    
     try {
-        // A. Find Registration from Token
-        const reg = await db.query('SELECT * FROM registrations WHERE qr_token = $1', [qr_token]);
+        await client.query('BEGIN');
+
+        // A. Find Registration with student details in one query
+        const regResult = await client.query(`
+            SELECT r.*, u.name as student_name, u.email, u.batch
+            FROM registrations r
+            JOIN users u ON r.student_id = u.user_id
+            WHERE r.qr_token = $1
+            FOR UPDATE
+        `, [qr_token]);
         
-        if (reg.rows.length === 0) {
-            console.log('❌ Invalid QR Token');
+        if (regResult.rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ error: "Invalid QR Token" });
         }
 
-        const registration = reg.rows[0];
-        console.log('✅ Found registration for event:', registration.event_id);
+        const registration = regResult.rows[0];
+        console.log('✅ Found registration for:', registration.student_name);
 
-        // B. Get volunteer's details
-        const volunteerResult = await db.query(
-            'SELECT event_id, current_floor, current_counter FROM volunteers WHERE id = $1',
+        // B. Get volunteer details
+        const volunteerResult = await client.query(
+            'SELECT event_id, current_floor, current_counter, name FROM volunteers WHERE id = $1',
             [volunteer_id]
         );
 
         if (volunteerResult.rows.length === 0) {
-            console.log('❌ Volunteer not found');
+            await client.query('ROLLBACK');
             return res.status(404).json({ error: "Volunteer not found" });
         }
 
         const volunteer = volunteerResult.rows[0];
-        console.log('✅ Volunteer assigned to event:', volunteer.event_id);
 
         // C. Validate Event Match
-        // Prevents a volunteer from Event A scanning a student for Event B
         if (registration.event_id !== volunteer.event_id) {
-            console.log(`❌ Event mismatch: Volunteer Event ${volunteer.event_id} vs Student Event ${registration.event_id}`);
+            await client.query('ROLLBACK');
             return res.status(403).json({ 
                 error: "You can only scan QR codes for your assigned event" 
             });
         }
 
-        console.log('✅ Event validation passed');
-
-        // D. Check Registration Status
+        // D. Check Status
         if (registration.status === 'served') {
-            console.log('❌ Already served');
-            return res.status(400).json({ error: "Student already served" });
-        }
-        if (registration.status === 'cancelled') {
-            console.log('❌ Registration cancelled');
-            return res.status(400).json({ error: "Registration cancelled" });
+            await client.query('ROLLBACK');
+            return res.status(400).json({ 
+                error: "Student already served",
+                student_name: registration.student_name
+            });
         }
 
-        // E. Update Status (The Fix)
-        // We use NOW() to save the exact UTC timestamp.
-        // The frontend will handle converting this to "2:51 PM" or "14:51".
-        console.log('✅ Updating registration status to served...');
-        
-        await db.query(
-            "UPDATE registrations SET status = 'served', served_at = NOW() WHERE registration_id = $1",
+        // E. Update with proper timezone
+        await client.query(
+            "UPDATE registrations SET status = 'served', served_at = timezone('Asia/Kolkata', NOW()) WHERE registration_id = $1",
             [registration.registration_id]
         );
 
-        // F. Record Volunteer Action (Audit Log)
-        // We record exactly which floor/counter the volunteer was at during this scan.
-        console.log('✅ Recording volunteer action...');
-        await db.query(
+        // F. Record volunteer action
+        await client.query(
             `INSERT INTO volunteer_actions (volunteer_id, registration_id, action, floor, counter) 
              VALUES ($1, $2, 'scan', $3, $4)`,
             [volunteer_id, registration.registration_id, volunteer.current_floor, volunteer.current_counter]
         );
 
+        await client.query('COMMIT');
+
         console.log('✅ Scan completed successfully');
-        res.json({ message: "Scan successful", student_id: registration.student_id });
+        res.json({ 
+            message: "Scan successful", 
+            student_id: registration.student_id,
+            student_name: registration.student_name,
+            batch: registration.batch,
+            success: true
+        });
 
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('❌ Scan error:', err);
-        res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: "Server error during scan" });
+    } finally {
+        client.release();
     }
 });
 
