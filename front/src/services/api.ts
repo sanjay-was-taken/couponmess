@@ -84,7 +84,7 @@ export const eventsApi = {
     request(`/events/${eventId}/volunteers`, { method: 'POST', body: JSON.stringify(data) }),
 
   deleteVolunteer: (volunteerId: number) => 
-  request(`/volunteers/${volunteerId}`, { method: 'DELETE' }),
+  request(`/events/volunteers/${volunteerId}`, { method: 'DELETE' }),
 
 getEventSlots: (eventId: number) => 
     request(`/events/${eventId}/slots`),
