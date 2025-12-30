@@ -91,14 +91,12 @@ router.post('/:id/slots', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     
-    // Using a transaction ensures partial deletes don't happen
-    const client = await db.pool.connect(); 
-
     try {
-        await client.query('BEGIN');
+        // Use db.query instead of pool connection
+        await db.query('BEGIN');
 
         // 1. Delete Volunteer Actions
-        await client.query(`
+        await db.query(`
             DELETE FROM volunteer_actions 
             WHERE registration_id IN (
                 SELECT registration_id FROM registrations WHERE event_id = $1
@@ -106,33 +104,32 @@ router.delete('/:id', async (req, res) => {
         `, [id]);
 
         // 2. Delete Student Registrations
-        await client.query('DELETE FROM registrations WHERE event_id = $1', [id]);
+        await db.query('DELETE FROM registrations WHERE event_id = $1', [id]);
 
         // 3. Delete Event Slots
-        await client.query('DELETE FROM event_slots WHERE event_id = $1', [id]);
+        await db.query('DELETE FROM event_slots WHERE event_id = $1', [id]);
 
         // 4. Delete Volunteers assigned to this event
-        await client.query('DELETE FROM volunteers WHERE event_id = $1', [id]);
+        await db.query('DELETE FROM volunteers WHERE event_id = $1', [id]);
 
         // 5. Finally, Delete the Main Event
-        const result = await client.query('DELETE FROM events WHERE event_id = $1 RETURNING *', [id]);
+        const result = await db.query('DELETE FROM events WHERE event_id = $1 RETURNING *', [id]);
 
         if (result.rows.length === 0) {
-            await client.query('ROLLBACK');
+            await db.query('ROLLBACK');
             return res.status(404).json({ error: "Event not found" });
         }
 
-        await client.query('COMMIT');
+        await db.query('COMMIT');
         res.json({ message: "Event and all related data permanently deleted." });
 
     } catch (err) {
-        await client.query('ROLLBACK');
+        await db.query('ROLLBACK');
         console.error("Delete Error:", err);
-        res.status(500).json({ error: "Server error. Could not delete event data." });
-    } finally {
-        client.release();
+        res.status(500).json({ error: "Server error during deletion" });
     }
 });
+
 
 // ==========================================
 // 6. VOLUNTEER MANAGEMENT
