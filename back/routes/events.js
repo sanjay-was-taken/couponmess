@@ -25,45 +25,29 @@ router.get('/', async (req, res) => {
 });
 
 // ==========================================
-// 2. CREATE EVENT (Admin)
-// ==========================================
-router.post('/', async (req, res) => {
-    const { name, description, date, status } = req.body;
-    try {
-        const result = await db.query(
-            `INSERT INTO events (name, description, date, status) 
-             VALUES ($1, $2, $3, $4) RETURNING *`,
-            [name, description, date, status || 'active']
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error" });
-    }
-});
-
-// ==========================================
 // 3. CLOSE / UPDATE EVENT (Admin)
 // ==========================================
 router.patch('/:id', async (req, res) => {
     const { id } = req.params;
+    // We extract status explicitly. If the admin sends "active", we MUST respect it.
     let { name, description, date, status, time_start, time_end } = req.body;
 
     try {
         // 1. Update the Main Event Details
+        // We do NOT check the time here. If the admin says it's active, it's active.
         const result = await db.query(
             `UPDATE events 
              SET name = COALESCE($1, name),
                  description = COALESCE($2, description),
                  date = COALESCE($3, date),
-                 status = COALESCE($4, status)
+                 status = COALESCE($4, status) 
              WHERE event_id = $5 RETURNING *`,
             [name, description, date, status, id]
         );
 
         if (result.rows.length === 0) return res.status(404).json({ error: "Event not found" });
 
-        // 2. Update the Slots (if times provided)
+        // 2. Update the Slots
         if (time_start && time_end) {
             await db.query(
                 `UPDATE event_slots 
