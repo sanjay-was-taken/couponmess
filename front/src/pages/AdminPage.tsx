@@ -449,25 +449,30 @@ const AdminPage: React.FC = () => {
                     <td>{formatDate(event.date)}</td>
                     <td><span className="text-muted small fw-bold">{formatTime(event.time_start)} - {formatTime(event.time_end)}</span></td>
                     <td>{getStatusBadge(event)}</td>
+                    
+                    {/* 👇 UPDATED BUTTON CONTAINER FOR MOBILE 👇 */}
                     <td className="text-end">
                       {isExpired ? (
-                        // If Expired, show simple label
                         <span className="text-muted small fst-italic">Expired</span>
                       ) : (
-                        // If Active or Closed but not expired, show buttons
-                        <>
+                        // Used d-flex with column direction on mobile (flex-column) and row on desktop (flex-md-row)
+                        // Added 'gap-2' for consistent spacing without margins
+                        <div className="d-flex flex-column flex-md-row gap-2 justify-content-md-end align-items-stretch">
                           <Button 
                             variant="outline-dark" 
                             size="sm" 
-                            className="me-2" 
                             title="Manage Staff"
                             onClick={() => handleManageVolunteers(event)}
                           >
                             <PersonBadge /> Staff
                           </Button>
-                          <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEditClick(event)}><PencilSquare /> Edit</Button>
-                          <Button variant="outline-danger" size="sm" onClick={() => handleDelete(event.event_id)}><Trash /> Delete</Button>
-                        </>
+                          <Button variant="outline-primary" size="sm" onClick={() => handleEditClick(event)}>
+                            <PencilSquare /> Edit
+                          </Button>
+                          <Button variant="outline-danger" size="sm" onClick={() => handleDelete(event.event_id)}>
+                            <Trash /> Delete
+                          </Button>
+                        </div>
                       )}
                     </td>
                   </tr>
