@@ -45,6 +45,7 @@ const formatScanTime = (timeStr: string) => {
 
 // --- UPDATED RECENT SCANS COMPONENT ---
 const RecentScansSection: React.FC<{ eventId: number }> = ({ eventId }) => {
+  const { user } = useAuth();
   const [recentScans, setRecentScans] = useState<ScanLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +55,17 @@ const RecentScansSection: React.FC<{ eventId: number }> = ({ eventId }) => {
       setLoading(true);
       setError(null);
       try {
-        const data = await eventsApi.getScanHistory(eventId);
-        // Get only the last 10 scans
+        // Get volunteer ID from user context
+        const volunteerUser = user as any;
+        const volunteerId = volunteerUser?.id;
+        
+        if (!volunteerId) {
+          setError('Volunteer not found');
+          return;
+        }
+
+        // Use volunteer-specific API
+        const data = await eventsApi.getVolunteerScanHistory(eventId, volunteerId);
         setRecentScans(data.scanHistory.slice(0, 10));
       } catch (err) {
         console.error('Failed to fetch recent scans:', err);
