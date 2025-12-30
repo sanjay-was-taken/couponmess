@@ -24,6 +24,25 @@ router.get('/', async (req, res) => {
     }
 });
 
+
+// ==========================================
+// 2. CREATE EVENT (Admin)
+// ==========================================
+router.post('/', async (req, res) => {
+    const { name, description, date, status } = req.body;
+    try {
+        const result = await db.query(
+            `INSERT INTO events (name, description, date, status) 
+             VALUES ($1, $2, $3, $4) RETURNING *`,
+            [name, description, date, status || 'active']
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
 // ==========================================
 // 3. CLOSE / UPDATE EVENT (Admin)
 // ==========================================
