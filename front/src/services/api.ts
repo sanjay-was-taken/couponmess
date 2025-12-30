@@ -1,27 +1,46 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://couponmess.onrender.com';
 
 // Helper to handle headers and errors
-const request = async (endpoint: string, options: RequestInit = {}) => {
+const request = async (endpoint: string, options: RequestInit = {}, retries = 2) => {
   const token = localStorage.getItem('token'); 
   
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}), // Auto-attach token
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...options.headers,
-  } as HeadersInit; // <--- Type assertion fixes TS error
+  } as HeadersInit;
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-  const data = await response.json();
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
 
-  if (!response.ok) {
-    throw new Error(data.error || 'API Request Failed');
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Request Failed`);
+      }
+
+      return data;
+    } catch (err: any) {
+      if (attempt === retries) {
+        if (err.name === 'AbortError') {
+          throw new Error('Request timeout - please try again');
+        }
+        throw new Error(err.message || 'Network error - please check your connection');
+      }
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
   }
-
-  return data;
 };
 
 // ==========================================
@@ -86,6 +105,7 @@ export const eventsApi = {
   deleteVolunteer: (volunteerId: number) => 
   request(`/events/volunteers/${volunteerId}`, { method: 'DELETE' }),
 
+
 getEventSlots: (eventId: number) => 
     request(`/events/${eventId}/slots`),
 
@@ -101,11 +121,23 @@ getEventSlots: (eventId: number) =>
 // 4. REGISTRATION / SCANNER API
 // ==========================================
 export const registrationApi = {
-  scan: (qrToken: string, volunteerId: number) => 
-    request('/registrations/scan', { 
-      method: 'POST', 
-      body: JSON.stringify({ qr_token: qrToken, volunteer_id: volunteerId }) 
-    }),
+  scan: async (qrToken: string, volunteerId: number) => {
+    try {
+      return await request('/registrations/scan', { 
+        method: 'POST', 
+        body: JSON.stringify({ qr_token: qrToken, volunteer_id: volunteerId }) 
+      });
+    } catch (err: any) {
+      // Enhanced error messages
+      if (err.message.includes('already served')) {
+        throw new Error('This student has already been served');
+      }
+      if (err.message.includes('Invalid QR')) {
+        throw new Error('Invalid QR code - please try scanning again');
+      }
+      throw err;
+    }
+  },
 
   register: (studentId: number, eventId: number) => 
     request('/registrations', { 
