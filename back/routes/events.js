@@ -4,12 +4,25 @@ const router = express.Router();
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 
-// ==========================================
-// 1. GET ALL EVENTS (Admin) 
-// ==========================================
-// NOTE: Auto-close logic REMOVED. Admin controls status manually.
+// routes/events.js
+
+// 1. GET ALL EVENTS (Admin)
 router.get('/', async (req, res) => {
     try {
+        // ✅ RE-ADDED: Auto-Close Logic
+        // This checks if the event's End Time is less than the Current Time (in IST)
+        await db.query(`
+            UPDATE events
+            SET status = 'closed'
+            WHERE status = 'active'
+            AND event_id IN (
+                SELECT event_id FROM event_slots
+                GROUP BY event_id
+                HAVING MAX(time_end) < (NOW() AT TIME ZONE 'UTC' + interval '5 hours 30 minutes')
+            )
+        `);
+
+        // --- Fetch List ---
         const result = await db.query(`
             SELECT e.*, 
                    (SELECT time_start FROM event_slots WHERE event_id = e.event_id LIMIT 1) as time_start,
@@ -23,7 +36,6 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
-
 
 // ==========================================
 // 2. CREATE EVENT (Admin)
@@ -311,17 +323,25 @@ router.get('/:id/stats/volunteer/:vid', async (req, res) => {
 // ==========================================
 // 8. ACTIVE & STUDENT EVENTS
 // ==========================================
-
-// GET ACTIVE EVENTS (Student Dashboard)
+// 8. GET ACTIVE EVENTS (Student Dashboard)
 router.get('/active', async (req, res) => {
     const studentId = req.query.student_id;
 
     try {
-        // NOTE: Removed auto-close logic. Admin controls status.
+        // ✅ RE-ADDED: Auto-Close Logic here too
+        await db.query(`
+            UPDATE events
+            SET status = 'closed'
+            WHERE status = 'active'
+            AND event_id IN (
+                SELECT event_id FROM event_slots
+                GROUP BY event_id
+                HAVING MAX(time_end) < (NOW() AT TIME ZONE 'UTC' + interval '5 hours 30 minutes')
+            )
+        `);
         
         let query;
         let params = [];
-
         if (studentId) {
             query = `
                 SELECT 
