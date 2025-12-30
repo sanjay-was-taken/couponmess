@@ -33,3 +33,16 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(` SUCCESS! Server running on port ${PORT}`);
 });
+
+const helmet = require('helmet');
+const compression = require('compression');
+
+// Add after other middleware
+app.use(helmet());
+app.use(compression());
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('Global error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
