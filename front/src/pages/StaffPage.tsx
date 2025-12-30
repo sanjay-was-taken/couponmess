@@ -22,33 +22,20 @@ interface ScanLog {
 const formatScanTime = (timeStr: string) => {
   if (!timeStr) return '-';
 
-  // 1. Try parsing as a standard ISO Date (e.g. 2025-12-30T10:00:00Z)
-  // This handles the "Correct" database format
+  // 1. Try parsing as a standard ISO Date (The new correct format from DB)
+  // This handles timestamps like "2025-12-30T09:21:00.000Z"
   const standardDate = new Date(timeStr);
-  if (!isNaN(standardDate.getTime()) && timeStr.includes('T')) {
-     return standardDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true ,timeZone: 'Asia/Kolkata'});
+  if (!isNaN(standardDate.getTime()) && (timeStr.includes('T') || timeStr.includes('-'))) {
+     return standardDate.toLocaleTimeString('en-IN', { 
+         hour: '2-digit', 
+         minute: '2-digit', 
+         hour12: true, 
+         timeZone: 'Asia/Kolkata' // <--- FORCE INDIA TIMEZONE
+     });
   }
 
-  // 2. Fallback for "06:53 am" format (Raw Time String from DB)
-  // We assume this raw string is in UTC and convert it to Local Time
-  try {
-    const [time, modifier] = timeStr.split(' ');
-    if (!time || !modifier) return timeStr; 
-
-    let [hours, minutes] = time.split(':').map(Number);
-
-    if (modifier.toLowerCase() === 'pm' && hours < 12) hours += 12;
-    if (modifier.toLowerCase() === 'am' && hours === 12) hours = 0;
-
-    // Create a date object treating these as UTC hours
-    const date = new Date();
-    date.setUTCHours(hours, minutes, 0, 0);
-
-    // Display in User's Local Time
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-  } catch (e) {
-    return timeStr; 
-  }
+  // 2. Fallback for legacy data (if any string formats remain)
+  return timeStr;
 };
 
 // --- UPDATED RECENT SCANS COMPONENT ---
