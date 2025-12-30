@@ -5,6 +5,20 @@ const db = require('../db');
 const bcrypt = require('bcryptjs');
 
 // routes/events.js
+const createIndexes = async () => {
+    try {
+        await db.query('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_registrations_qr_token ON registrations(qr_token)');
+        await db.query('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_registrations_event_status ON registrations(event_id, status)');
+        await db.query('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_volunteer_actions_volunteer ON volunteer_actions(volunteer_id)');
+        await db.query('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_event_slots_event ON event_slots(event_id)');
+        console.log('✅ Database indexes created');
+    } catch (err) {
+        console.log('Indexes may already exist:', err.message);
+    }
+};
+
+createIndexes();
+
 
 // 1. GET ALL EVENTS (Admin)
 router.get('/', async (req, res) => {
@@ -416,26 +430,70 @@ router.get('/all-for-student', async (req, res) => {
 // GET SCAN HISTORY
 router.get('/:id/scan-history', async (req, res) => {
     const { id } = req.params;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100); // Max 100
+    const offset = parseInt(req.query.offset) || 0;
+    
     try {
         const result = await db.query(`
             SELECT 
                 u.name as student_name,
                 u.email as roll_number,
                 u.batch,
-                CONCAT('Floor ', va.floor, ' - Counter ', va.counter) as counter_name,
-                r.served_at as scanned_at
+                COALESCE(CONCAT('Floor ', va.floor, ' - Counter ', va.counter), 'Staff') as counter_name,
+                timezone('Asia/Kolkata', r.served_at) as scanned_at
             FROM registrations r
             JOIN users u ON r.student_id = u.user_id
-            JOIN volunteer_actions va ON va.registration_id = r.registration_id
+            LEFT JOIN volunteer_actions va ON va.registration_id = r.registration_id
             WHERE r.event_id = $1 AND r.status = 'served'
             ORDER BY r.served_at DESC
-            LIMIT 50
-        `, [id]);
+            LIMIT $2 OFFSET $3
+        `, [id, limit, offset]);
 
-        res.json({ scanHistory: result.rows });
+        res.json({ 
+            scanHistory: result.rows,
+            hasMore: result.rows.length === limit
+        });
     } catch (err) {
         console.error('❌ Scan history error:', err);
         res.status(500).json({ error: "Server error fetching scan history" });
+    }
+});
+
+// Optimized volunteer stats
+router.get('/:id/stats/volunteer/:vid', async (req, res) => {
+    const { id, vid } = req.params;
+    
+    try {
+        const [totalResult, batchResult, volunteerResult] = await Promise.all([
+            db.query(`
+                SELECT COUNT(*) 
+                FROM volunteer_actions va
+                JOIN registrations r ON va.registration_id = r.registration_id
+                WHERE r.event_id = $1 AND va.volunteer_id = $2
+            `, [id, vid]),
+            
+            db.query(`
+                SELECT u.batch, COUNT(*) as count
+                FROM volunteer_actions va
+                JOIN registrations r ON va.registration_id = r.registration_id
+                JOIN users u ON r.student_id = u.user_id
+                WHERE r.event_id = $1 AND va.volunteer_id = $2
+                GROUP BY u.batch
+                ORDER BY u.batch ASC
+            `, [id, vid]),
+            
+            db.query('SELECT name FROM volunteers WHERE id = $1', [vid])
+        ]);
+
+        res.json({
+            total: parseInt(totalResult.rows[0].count),
+            byBatch: batchResult.rows,
+            volunteerName: volunteerResult.rows[0]?.name || 'Unknown'
+        });
+
+    } catch (err) {
+        console.error('❌ Volunteer stats error:', err);
+        res.status(500).json({ error: "Server error fetching volunteer stats" });
     }
 });
 
@@ -479,5 +537,6 @@ router.patch('/volunteers/:vid/assignment', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
 
 module.exports = router;
