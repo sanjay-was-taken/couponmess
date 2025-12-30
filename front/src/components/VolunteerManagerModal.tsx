@@ -95,19 +95,21 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
     setShowToast(true);
 
     // 2. Optimistic UI Update (Remove from list instantly)
-    const previousVolunteers = [...volunteers]; // Backup in case of error
-    setVolunteers(volunteers.filter(v => v.id !== volId));
+    // We keep a backup in case the API call fails later
+    const previousVolunteers = [...volunteers]; 
+    setVolunteers(prev => prev.filter(v => v.id !== volId));
 
     try {
       // 3. Actual API Call
       await eventsApi.deleteVolunteer(volId);
       
-      // No need to fetchVolunteers() if the optimistic update worked, 
-      // but we can do it silently to be sure.
-      // await fetchVolunteers(); 
+      // SUCCESS: Do nothing! The UI is already correct.
+      // We specifically DO NOT call fetchVolunteers() here to avoid race conditions 
+      // where the server returns the old list before the DB delete is fully committed.
+      
     } catch (err) {
       console.error(err);
-      // Revert UI if failed
+      // ERROR: Revert UI if the API call failed
       setVolunteers(previousVolunteers);
       setToastMessage(`Failed to delete "${volName}".`);
     }
