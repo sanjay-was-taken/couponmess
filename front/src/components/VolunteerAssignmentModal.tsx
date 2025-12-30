@@ -90,7 +90,7 @@ const VolunteerAssignmentModal: React.FC<VolunteerAssignmentModalProps> = ({
       <Modal.Body>
         <div className="text-center mb-4">
           <h5>Welcome, {volunteerName}!</h5>
-          <p className="text-muted">Please select your floor and counter for this session.</p>
+          <p className="text-muted">Please select your Mess for this session.</p>
         </div>
 
         {error && <Alert variant="danger">{error}</Alert>}
