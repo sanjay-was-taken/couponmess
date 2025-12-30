@@ -32,7 +32,7 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
 
   const formatTime = (timeStr: string | null) => {
     if (!timeStr) return '';
-    return new Date(timeStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(timeStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit',hour12: true });
   };
 
   const renderStatus = () => {
@@ -135,8 +135,8 @@ const DashboardPage: React.FC = () => {
         if (item.status === 'active') {
           let slotInfo = undefined;
           if (item.floor && item.time_start && item.time_end) {
-            const start = new Date(item.time_start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const end = new Date(item.time_end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const start = new Date(item.time_start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit' , hour12: true});
+            const end = new Date(item.time_end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit' , hour12: true});
             slotInfo = { floor: item.floor, time: `${start} - ${end}` };
           }
           
