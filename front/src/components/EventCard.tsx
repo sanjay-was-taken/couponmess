@@ -31,7 +31,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
     
     // FIX: Replace normal space with non-breaking space (\u00A0)
     // This ensures "06:05 PM" stays together and prevents the "PM" from hanging on a new line
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(' ', '\u00A0');
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' , hour12: true }).replace(' ', '\u00A0');
   };
 
   return (
