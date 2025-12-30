@@ -129,11 +129,31 @@ router.post('/scan', async (req, res) => {
         }
 
         // E. Update Status
-        console.log('✅ Updating registration status to served...');
-        await db.query(
-            "UPDATE registrations SET status = 'served', served_at = NOW() WHERE registration_id = $1",
-            [registration.registration_id]
-        );
+        // Check current timezone and adjust accordingly
+        const timezoneCheck = await db.query("SHOW timezone");
+        const currentTz = timezoneCheck.rows[0].TimeZone.toLowerCase();
+        
+        console.log('Current database timezone:', currentTz);
+        
+        let timestampQuery;
+        // Check for various IST timezone representations
+        if (currentTz.includes('kolkata') || 
+            currentTz.includes('calcutta') || 
+            currentTz === 'ist' || 
+            currentTz.includes('+05:30') ||
+            currentTz.includes('+0530')) {
+            
+            // Database is already in IST
+            timestampQuery = "UPDATE registrations SET status = 'served', served_at = NOW() WHERE registration_id = $1";
+            console.log('✅ Database already in IST timezone');
+        } else {
+            // Database is in UTC or other timezone, convert to IST
+            timestampQuery = "UPDATE registrations SET status = 'served', served_at = (NOW() + INTERVAL '5 hours 30 minutes') WHERE registration_id = $1";
+            console.log('🔄 Converting UTC to IST (+5:30)');
+        }
+        
+        await db.query(timestampQuery, [registration.registration_id]);
+
 
         // F. Record Volunteer Action WITH floor/counter at time of scan
         console.log('✅ Recording volunteer action...');
