@@ -538,5 +538,33 @@ router.patch('/volunteers/:vid/assignment', async (req, res) => {
     }
 });
 
+// GET SCAN HISTORY FOR SPECIFIC VOLUNTEER (Last 10 scans by that volunteer only)
+router.get('/:id/scan-history/volunteer/:volunteerId', async (req, res) => {
+    const { id, volunteerId } = req.params;
+    
+    try {
+        const result = await db.query(`
+            SELECT 
+                u.name as student_name,
+                u.email as roll_number,
+                u.batch,
+                CONCAT('Floor ', va.floor, ' - Counter ', va.counter) as counter_name,
+                timezone('Asia/Kolkata', r.served_at) as scanned_at
+            FROM registrations r
+            JOIN users u ON r.student_id = u.user_id
+            JOIN volunteer_actions va ON va.registration_id = r.registration_id
+            WHERE r.event_id = $1 AND va.volunteer_id = $2 AND r.status = 'served'
+            ORDER BY r.served_at DESC
+            LIMIT 10
+        `, [id, volunteerId]);
+
+        res.json({ scanHistory: result.rows });
+    } catch (err) {
+        console.error('❌ Volunteer scan history error:', err);
+        res.status(500).json({ error: "Server error fetching volunteer scan history" });
+    }
+});
+
+
 
 module.exports = router;
