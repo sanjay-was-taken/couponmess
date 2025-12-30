@@ -229,20 +229,30 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
       </Modal>
 
       {/* TOAST NOTIFICATION */}
-      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
-        <Toast 
-            onClose={() => setShowToast(false)} 
-            show={showToast} 
-            delay={4000} 
-            autohide 
-            bg={toastVariant} // Dynamic background color
-        >
-          <Toast.Header>
-            <strong className="me-auto">Notification</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
+<ToastContainer 
+  position="top-end" 
+  className="p-3" 
+  style={{ 
+    zIndex: 9999,  // Higher z-index to appear above modal
+    position: 'fixed'  // Ensure it's positioned relative to viewport
+  }}
+>
+  <Toast 
+      onClose={() => setShowToast(false)} 
+      show={showToast} 
+      delay={4000} 
+      autohide 
+      bg={toastVariant}
+  >
+    <Toast.Header closeButton>
+      <strong className="me-auto">
+        {toastVariant === 'success' ? ' Success' : ' Error'}
+      </strong>
+    </Toast.Header>
+    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+  </Toast>
+</ToastContainer>
+
     </>
   );
 };
