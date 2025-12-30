@@ -18,14 +18,44 @@ interface ScanLog {
   scanned_at: string;
 }
 
-// Add this component
+// --- HELPER FUNCTION FOR TIME FORMATTING ---
+const formatScanTime = (timeStr: string) => {
+  if (!timeStr) return '-';
+
+  // 1. Try parsing as a standard ISO Date (e.g. 2025-12-30T10:00:00Z)
+  // This handles the "Correct" database format
+  const standardDate = new Date(timeStr);
+  if (!isNaN(standardDate.getTime()) && timeStr.includes('T')) {
+     return standardDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  // 2. Fallback for "06:53 am" format (Raw Time String from DB)
+  // We assume this raw string is in UTC and convert it to Local Time
+  try {
+    const [time, modifier] = timeStr.split(' ');
+    if (!time || !modifier) return timeStr; 
+
+    let [hours, minutes] = time.split(':').map(Number);
+
+    if (modifier.toLowerCase() === 'pm' && hours < 12) hours += 12;
+    if (modifier.toLowerCase() === 'am' && hours === 12) hours = 0;
+
+    // Create a date object treating these as UTC hours
+    const date = new Date();
+    date.setUTCHours(hours, minutes, 0, 0);
+
+    // Display in User's Local Time
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  } catch (e) {
+    return timeStr; 
+  }
+};
+
+// --- UPDATED RECENT SCANS COMPONENT ---
 const RecentScansSection: React.FC<{ eventId: number }> = ({ eventId }) => {
   const [recentScans, setRecentScans] = useState<ScanLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
-const [volunteerAssignment, setVolunteerAssignment] = useState<{floor: string, counter: string} | null>(null);
-
 
   useEffect(() => {
     const fetchRecentScans = async () => {
@@ -38,7 +68,7 @@ const [volunteerAssignment, setVolunteerAssignment] = useState<{floor: string, c
       } catch (err) {
         console.error('Failed to fetch recent scans:', err);
         setError('Unable to load recent scans');
-        setRecentScans([]); // Set empty array on error
+        setRecentScans([]); 
       } finally {
         setLoading(false);
       }
@@ -90,11 +120,8 @@ const [volunteerAssignment, setVolunteerAssignment] = useState<{floor: string, c
                     <div className="text-end">
                       <div className="small text-success fw-semibold">{scan.counter_name}</div>
                       <div className="small text-muted">
-                        {new Date(scan.scanned_at).toLocaleTimeString('en-IN', {
-                          hour: '2-digit', 
-                          minute: '2-digit',
-                          timeZone: 'Asia/Kolkata'
-                        })}
+                        {/* 🆕 USES THE FIX HERE */}
+                        {formatScanTime(scan.scanned_at)}
                       </div>
                     </div>
                   </div>
@@ -130,34 +157,23 @@ export const StaffPage = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<{id: number, name: string} | null>(null);
+  
   // --- Assignment State ---
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [volunteerAssignment, setVolunteerAssignment] = useState<{floor: string, counter: string} | null>(null);
 
-  // 1. Fetch Active Events (Using Service Layer)
- // Replace the useEffect that fetches events with this:
-// 1. Fix the useEffect
-useEffect(() => {
+  // 1. Fetch Event Logic
+  useEffect(() => {
     const fetchCurrentEvent = async () => {
         try {
             const volunteerUser = user as any;
-            console.log('Fetching event for volunteer:', volunteerUser);
-            
             if (volunteerUser?.event_id) {
-                console.log('Looking for event_id:', volunteerUser.event_id);
                 const allEvents = await eventsApi.getAll();
-                console.log('All events:', allEvents);
-                
                 const currentEvent = allEvents.find((e: EventData) => e.event_id === volunteerUser.event_id);
-                console.log('Found current event:', currentEvent);
                 
                 if (currentEvent) {
                     setEvents([currentEvent]);
-                } else {
-                    console.log('No matching event found for event_id:', volunteerUser.event_id);
                 }
-            } else {
-                console.log('No event_id found in user object');
             }
         } catch(err) { 
             console.error("Failed to load event", err); 
@@ -167,119 +183,69 @@ useEffect(() => {
     if (user) {
         fetchCurrentEvent();
     }
-}, [user]);
+  }, [user]);
 
-// Check if volunteer needs assignment
-useEffect(() => {
-  const volunteerUser = user as any;
-  if (volunteerUser && volunteerUser.role === 'volunteer') {
-    // Check if volunteer has current assignment
-    if (!volunteerUser.current_floor || !volunteerUser.current_counter) {
-      setShowAssignmentModal(true);
-    } else {
-      setVolunteerAssignment({
-        floor: volunteerUser.current_floor,
-        counter: volunteerUser.current_counter
-      });
+  // Check if volunteer needs assignment
+  useEffect(() => {
+    const volunteerUser = user as any;
+    if (volunteerUser && volunteerUser.role === 'volunteer') {
+      if (!volunteerUser.current_floor || !volunteerUser.current_counter) {
+        setShowAssignmentModal(true);
+      } else {
+        setVolunteerAssignment({
+          floor: volunteerUser.current_floor,
+          counter: volunteerUser.current_counter
+        });
+      }
     }
-  }
-}, [user]);
-
-
-// Check if volunteer needs assignment
-useEffect(() => {
-  const volunteerUser = user as any;
-  if (volunteerUser && volunteerUser.role === 'volunteer') {
-    // Check if volunteer has current assignment
-    if (!volunteerUser.current_floor || !volunteerUser.current_counter) {
-      setShowAssignmentModal(true);
-    } else {
-      setVolunteerAssignment({
-        floor: volunteerUser.current_floor,
-        counter: volunteerUser.current_counter
-      });
-    }
-  }
-}, [user]);
-
-
-{!showScanner && !loading && (
-    <div className="mt-4">
-        <h5 className="fw-bold mb-3 text-muted border-bottom pb-2">Current Event</h5>
-        {events.length === 0 ? (
-            <p className="text-muted small">Loading your assigned event...</p>
-        ) : (
-            <>
-                <Card className="shadow-sm border-0 mb-4">
-                    {/* ... existing card content ... */}
-                </Card>
-                
-                {/* Recent Scans Section */}
-                <RecentScansSection eventId={(user as any)?.event_id} />
-            </>
-        )}
-    </div>
-)}
-
+  }, [user]);
 
   // 2. Open Stats Modal
   const handleOpenStats = (event: EventData) => {
       setSelectedEvent({ id: event.event_id, name: event.name });
       setShowStatsModal(true);
   };
+
   // 3. Handle Assignment Completion
   const handleAssignmentComplete = (assignment: {floor: string, counter: string}) => {
     setVolunteerAssignment(assignment);
     setShowAssignmentModal(false);
   };
 
-
   // 3. Handle Scan (Using Service Layer)
- const handleScanSuccess = async (decodedText: string) => {
-  setShowScanner(false);
-  setLoading(true);
-  setScanResult(null);
+  const handleScanSuccess = async (decodedText: string) => {
+    setShowScanner(false);
+    setLoading(true);
+    setScanResult(null);
 
-  try {
-    // Debug logging
-    console.log('=== SCAN ATTEMPT ===');
-    console.log('User object:', user);
-    console.log('QR Token:', decodedText);
-    
-    // Get the correct volunteer ID
-    const volunteerUser = user as any;
-    const volunteerId = volunteerUser?.id; // For volunteers, use 'id' not 'user_id'
-    
-    console.log('Using volunteer ID:', volunteerId);
-    
-    if (!volunteerId) throw new Error("Volunteer not authenticated");
+    try {
+      const volunteerUser = user as any;
+      const volunteerId = volunteerUser?.id; 
+      
+      if (!volunteerId) throw new Error("Volunteer not authenticated");
 
-    // API CALL
-    const data = await registrationApi.scan(decodedText, volunteerId);
-    
-    console.log('Scan response:', data);
+      // API CALL
+      await registrationApi.scan(decodedText, volunteerId);
+      
+      setScanResult({
+        status: 'success',
+        message: 'Coupon Verified. You can serve the food.',
+      });
 
-    // Success
-    setScanResult({
-      status: 'success',
-      message: 'Coupon Verified. You can serve the food.',
-    });
+    } catch (err: any) {
+      console.error('Scan error:', err);
+      
+      const errorMessage = err.message || 'Invalid Token';
+      const isWarning = errorMessage.toLowerCase().includes("already served");
 
-  } catch (err: any) {
-    console.error('Scan error:', err);
-    
-    // Error Handling - Fixed the typo
-    const errorMessage = err.message || 'Invalid Token';
-    const isWarning = errorMessage.toLowerCase().includes("already served"); // Fixed: removed 'P'
-
-    setScanResult({
-      status: isWarning ? 'warning' : 'error',
-      message: errorMessage
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      setScanResult({
+        status: isWarning ? 'warning' : 'error',
+        message: errorMessage
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleReset = () => {
     setScanResult(null);
@@ -378,7 +344,7 @@ useEffect(() => {
                             
                             <Button 
                                 variant="outline-success" 
-                                size="sm"
+                                size="sm" 
                                 onClick={() => handleOpenStats(events[0])}
                                 className="w-100"
                             >
@@ -389,7 +355,7 @@ useEffect(() => {
 
                 )}
                 
-                {/* Recent Scans Section */}
+                {/* Recent Scans Section with FIX */}
                 <RecentScansSection eventId={(user as any)?.event_id} />
             </div>
           )}
