@@ -69,7 +69,7 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
     const standardDate = new Date(timeStr);
     if (!isNaN(standardDate.getTime()) && timeStr.includes('T')) {
        // If it's a valid full timestamp, just format it to local
-       return standardDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+       return standardDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true,timeZone: 'Asia/Kolkata' });
     }
 
     // 2. Fallback for your current "06:53 am" format (which is effectively UTC)
