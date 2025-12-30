@@ -65,34 +65,18 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
   const formatScanTime = (timeStr: string) => {
     if (!timeStr) return '-';
 
-    // 1. Try parsing as a standard ISO Date (Future-proof)
     const standardDate = new Date(timeStr);
-    if (!isNaN(standardDate.getTime()) && timeStr.includes('T')) {
-       // If it's a valid full timestamp, just format it to local
-       return standardDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true,timeZone: 'Asia/Kolkata' });
+    // Check if valid date
+    if (!isNaN(standardDate.getTime()) && (timeStr.includes('T') || timeStr.includes('-'))) {
+       return standardDate.toLocaleTimeString('en-IN', { 
+           hour: '2-digit', 
+           minute: '2-digit', 
+           hour12: true, 
+           timeZone: 'Asia/Kolkata' 
+       });
     }
 
-    // 2. Fallback for your current "06:53 am" format (which is effectively UTC)
-    try {
-      // Parse "06:53 am" manually
-      const [time, modifier] = timeStr.split(' ');
-      if (!time || !modifier) return timeStr; // Return raw if structure doesn't match
-
-      let [hours, minutes] = time.split(':').map(Number);
-
-      // Convert 12h to 24h
-      if (modifier.toLowerCase() === 'pm' && hours < 12) hours += 12;
-      if (modifier.toLowerCase() === 'am' && hours === 12) hours = 0;
-
-      // Create a date object treating these as UTC hours
-      const date = new Date();
-      date.setUTCHours(hours, minutes, 0, 0);
-
-      // Display in User's Local Time (Browser Default)
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-    } catch (e) {
-      return timeStr; // If all else fails, show raw string
-    }
+    return timeStr;
   };
 
   return (
