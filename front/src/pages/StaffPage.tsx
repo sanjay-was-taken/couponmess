@@ -19,24 +19,29 @@ interface ScanLog {
 }
 
 // --- HELPER FUNCTION FOR TIME FORMATTING ---
+// Robust time formatting with error handling
 const formatScanTime = (timeStr: string) => {
   if (!timeStr) return '-';
-
-  // 1. Try parsing as a standard ISO Date (The new correct format from DB)
-  // This handles timestamps like "2025-12-30T09:21:00.000Z"
-  const standardDate = new Date(timeStr);
-  if (!isNaN(standardDate.getTime()) && (timeStr.includes('T') || timeStr.includes('-'))) {
-     return standardDate.toLocaleTimeString('en-IN', { 
-         hour: '2-digit', 
-         minute: '2-digit', 
-         hour12: true, 
-         timeZone: 'Asia/Kolkata' // <--- FORCE INDIA TIMEZONE
-     });
+  
+  try {
+    const date = new Date(timeStr);
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date string:', timeStr);
+      return 'Invalid time';
+    }
+    
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
+    });
+  } catch (err) {
+    console.error('Time formatting error:', err);
+    return 'Error';
   }
-
-  // 2. Fallback for legacy data (if any string formats remain)
-  return timeStr;
 };
+
 
 // --- UPDATED RECENT SCANS COMPONENT ---
 const RecentScansSection: React.FC<{ eventId: number }> = ({ eventId }) => {
