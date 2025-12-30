@@ -129,14 +129,12 @@ router.post('/scan', async (req, res) => {
         }
 
         // E. Update Status
-        // Check current timezone and adjust accordingly
         console.log('✅ Updating registration status to served...');
         
         await db.query(
             "UPDATE registrations SET status = 'served', served_at = NOW() WHERE registration_id = $1",
             [registration.registration_id]
         );
-
 
         // F. Record Volunteer Action WITH floor/counter at time of scan
         console.log('✅ Recording volunteer action...');
