@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Card, Row, Col, Table, ProgressBar, Spinner, Alert } from 'react-bootstrap';
-import { BarChartFill, PeopleFill, Shop, ClockHistory } from 'react-bootstrap-icons'; // Added ClockHistory icon
+import { BarChartFill, PeopleFill, Shop, ClockHistory } from 'react-bootstrap-icons'; 
 import { eventsApi } from '../services/api';
 
 interface EventStatsModalProps {
@@ -16,10 +16,9 @@ interface EventStats {
   byCounter: { counter_name: string; count: string }[];
 }
 
-// 🆕 New Interface for the history items
 interface ScanLog {
   student_name: string;
-  roll_number: string; // or email, depending on your backend
+  roll_number: string; 
   batch: string;
   counter_name: string;
   scanned_at: string;
@@ -29,8 +28,6 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<EventStats | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  // Updated state with type
   const [scanHistory, setScanHistory] = useState<ScanLog[]>([]);
 
   useEffect(() => {
@@ -43,7 +40,7 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
     setLoading(true);
     setError(null);
     setStats(null);
-    setScanHistory([]); // Reset history on new fetch
+    setScanHistory([]); 
     
     try {
       if (!eventId) return;
@@ -60,6 +57,41 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
       setError('Could not load statistics.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🆕 ROBUST TIME HELPER
+  // Handles both "2025-12-30T10:00:00Z" (Future correct DB) AND "06:53 am" (Current raw DB)
+  const formatScanTime = (timeStr: string) => {
+    if (!timeStr) return '-';
+
+    // 1. Try parsing as a standard ISO Date (Future-proof)
+    const standardDate = new Date(timeStr);
+    if (!isNaN(standardDate.getTime()) && timeStr.includes('T')) {
+       // If it's a valid full timestamp, just format it to local
+       return standardDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    // 2. Fallback for your current "06:53 am" format (which is effectively UTC)
+    try {
+      // Parse "06:53 am" manually
+      const [time, modifier] = timeStr.split(' ');
+      if (!time || !modifier) return timeStr; // Return raw if structure doesn't match
+
+      let [hours, minutes] = time.split(':').map(Number);
+
+      // Convert 12h to 24h
+      if (modifier.toLowerCase() === 'pm' && hours < 12) hours += 12;
+      if (modifier.toLowerCase() === 'am' && hours === 12) hours = 0;
+
+      // Create a date object treating these as UTC hours
+      const date = new Date();
+      date.setUTCHours(hours, minutes, 0, 0);
+
+      // Display in User's Local Time (Browser Default)
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch (e) {
+      return timeStr; // If all else fails, show raw string
     }
   };
 
@@ -181,13 +213,9 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
                           <td><span className="badge bg-light text-dark border">{scan.batch}</span></td>
                           <td>{scan.counter_name}</td>
                           <td className="text-muted small">
-                            {new Date(scan.scanned_at).toLocaleTimeString('en-IN', {
-                              hour: '2-digit', 
-                              minute: '2-digit',
-                              timeZone: 'Asia/Kolkata'
-                            })}
+                            {/* USE THE NEW HELPER HERE */}
+                            {formatScanTime(scan.scanned_at)}
                           </td>
-
                         </tr>
                       ))}
                     </tbody>
@@ -209,3 +237,4 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
 };
 
 export default EventStatsModal;
+
