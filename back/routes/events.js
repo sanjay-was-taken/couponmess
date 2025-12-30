@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
             AND event_id IN (
                 SELECT event_id FROM event_slots
                 GROUP BY event_id
-                HAVING MAX(time_end) < (CURRENT_TIMESTAMP + interval '5 hours 30 minutes')
+                HAVING MAX(time_end) < (NOW() AT TIME ZONE 'UTC' + interval '5 hours 30 minutes')
             )
         `);
 
