@@ -336,9 +336,9 @@ const AdminPage: React.FC = () => {
         {!editingEventId && (
           <Card className="mb-4 shadow-sm border-0">
             <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
-              <span>Floor Configuration</span>
+              <span>Floor and Hostel Configuration</span>
               <Button variant="outline-primary" size="sm" onClick={addFloor}>
-                <PlusCircle className="me-1"/> Add Floor
+                <PlusCircle className="me-1"/> Add Mess
               </Button>
             </Card.Header>
             <Card.Body className="p-0">
@@ -346,7 +346,7 @@ const AdminPage: React.FC = () => {
                 <Table className="mb-0">
                   <thead className="bg-light">
                     <tr>
-                      <th className="fw-bold text-muted small" style={{ minWidth: '150px' }}>FLOOR NAME</th>
+                      <th className="fw-bold text-muted small" style={{ minWidth: '150px' }}>FLOOR NAME / HOSTEL NAME</th>
                       <th className="fw-bold text-muted small text-center">COUNTERS</th>
                       <th className="fw-bold text-muted small text-center">CAPACITY</th>
                       <th className="fw-bold text-muted small text-center" style={{ minWidth: '80px' }}>ACTION</th>
