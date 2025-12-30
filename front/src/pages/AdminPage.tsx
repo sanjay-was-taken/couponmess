@@ -53,7 +53,7 @@ const AdminPage: React.FC = () => {
   // --- Helpers ---
   const formatTime = (isoString?: string) => {
     if (!isoString) return '-';
-    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const formatDate = (isoString: string) => {
@@ -166,25 +166,13 @@ const AdminPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     if(!window.confirm("Are you sure you want to permanently delete this event? This will remove all student registrations and logs.")) return;
-    
-    // Set loading state to prevent double clicks
-    setLoading(true); 
-    
     try {
       await eventsApi.delete(id);
       
-      setMessage({ type: 'success', text: 'Event deleted successfully' });
-      
-      // Refresh list to show it's gone
+      setMessage({ type: 'success', text: 'Event deleted' });
       fetchEvents();
-    } catch (err: any) {
-      console.error("Delete failed:", err);
-      setMessage({ 
-        type: 'danger', 
-        text: err.message || 'Failed to delete event. Check console for details.' 
-      });
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      setMessage({ type: 'danger', text: 'Failed to delete' });
     }
   };
 
@@ -313,19 +301,38 @@ const AdminPage: React.FC = () => {
               <Col md={6}>
                 <Form.Group>
                   <Form.Label>Event Name</Form.Label>
-                  <Form.Control type="text" required value={eventName} onChange={e => setEventName(e.target.value)} min={getTodayIST()} />
+                  <Form.Control 
+                    type="text" 
+                    required 
+                    value={eventName} 
+                    onChange={e => setEventName(e.target.value)} 
+                    min={getTodayIST()} 
+                    placeholder="e.g. Christmas Dinner"
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
                   <Form.Label>Date</Form.Label>
-                  <Form.Control type="date" required value={eventDate} onChange={e => setEventDate(e.target.value)}  />
+                  <Form.Control 
+                    type="date" 
+                    required 
+                    value={eventDate} 
+                    onChange={e => setEventDate(e.target.value)} 
+                    placeholder="Select Date"
+                  />
                 </Form.Group>
               </Col>
             </Row>
             <Form.Group className="mb-3">
               <Form.Label>Description</Form.Label>
-              <Form.Control as="textarea" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
+              <Form.Control 
+                as="textarea" 
+                rows={2} 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                placeholder="Enter event details here..."
+              />
             </Form.Group>
             
             <Row>
@@ -386,16 +393,18 @@ const AdminPage: React.FC = () => {
                             value={floor.counterCount} 
                             onChange={(e) => updateFloor(floor.id, 'counterCount', parseInt(e.target.value))} 
                             size="sm"
+                            placeholder="e.g. 2"
                             style={{ width: '80px', margin: '0 auto' }}
                           />
                         </td>
                         <td className="align-middle text-center">
                           <Form.Control 
                             type="number" 
-                            min={1}
+                            min={1} 
                             value={floor.capacityPerCounter} 
                             onChange={(e) => updateFloor(floor.id, 'capacityPerCounter', parseInt(e.target.value))} 
                             size="sm"
+                            placeholder="e.g. 50"
                             style={{ width: '80px', margin: '0 auto' }}
                           />
                         </td>
@@ -443,7 +452,9 @@ const AdminPage: React.FC = () => {
             </thead>
             <tbody>
               {events.map(event => {
-                const isExpired = hasEventEnded(event); // Check if time has passed
+                // Only show as "Expired" if time has passed AND status is NOT active.
+                // If status is 'active', we assume the Admin kept it open on purpose.
+                const isExpired = hasEventEnded(event) && event.status !== 'active'; 
 
                 return (
                   <tr key={event.event_id}>
