@@ -37,49 +37,48 @@ const extractBatch = (email) => {
 };
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-
     try {
-        // Query database using email field (since username column doesn't exist)
-        const result = await db.query(
-            'SELECT * FROM users WHERE email = $1', 
-            [username]
-        );
-
-        if (result.rows.length > 0) {
-            const user = result.rows[0];
-
-            // Check if password matches
-            if (user.password === password) {
-                const appToken = jwt.sign(
-                    { 
-                        user_id: user.user_id, 
-                        role: user.role, 
-                        name: user.name, 
-                        email: user.email 
-                    },
-                    JWT_SECRET,
-                    { expiresIn: '24h' }
-                );
-
+        // Try volunteers table first (includes both volunteers and admins)
+        const volunteerResult = await db.query('SELECT * FROM volunteers WHERE username = $1', [username]);
+        
+        if (volunteerResult.rows.length > 0) {
+            const user = volunteerResult.rows[0];
+            const passwordMatch = await bcrypt.compare(password, user.password_hash);
+            
+            if (passwordMatch) {
+                const appToken = jwt.sign({ 
+                    id: user.id, 
+                    username: user.username, 
+                    name: user.name,
+                    role: user.role,  // 'admin' or 'volunteer'
+                    event_id: user.event_id,
+                    current_floor: user.current_floor,
+                    current_counter: user.current_counter
+                }, JWT_SECRET, { expiresIn: '24h' });
+                
                 return res.json({
                     message: "Login successful",
                     token: appToken,
                     user: { 
-                        user_id: user.user_id, 
-                        name: user.name, 
-                        role: user.role 
+                        id: user.id, 
+                        username: user.username, 
+                        name: user.name,
+                        role: user.role,
+                        event_id: user.event_id,
+                        current_floor: user.current_floor,
+                        current_counter: user.current_counter
                     }
                 });
             }
         }
-
+        
         return res.status(401).json({ error: "Invalid credentials" });
-
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error" });
     }
 });
+
 // ===============================
 // POST /auth/google
 // ===============================
@@ -165,57 +164,47 @@ router.post('/google', async (req, res) => {
 // Add this route for volunteer login
 router.post('/volunteer-login', async (req, res) => {
     const { username, password } = req.body;
-    
     console.log('=== VOLUNTEER LOGIN ATTEMPT ===');
     console.log('Username:', username);
-    console.log('Password provided:', password ? 'YES' : 'NO');
     
     try {
-        // Find volunteer by username
-        const result = await db.query(
-            'SELECT * FROM volunteers WHERE username = $1',
-            [username]
-        );
-        
-        console.log('Database query completed. Rows found:', result.rows.length);
+        // Find user in volunteers table (includes both volunteers and admins)
+        const result = await db.query('SELECT * FROM volunteers WHERE username = $1', [username]);
         
         if (result.rows.length === 0) {
-            console.log('❌ No volunteer found with username:', username);
+            console.log('❌ No user found with username:', username);
             return res.status(400).json({ error: 'Invalid credentials' });
         }
         
-        const volunteer = result.rows[0];
-        console.log('✅ Found volunteer:', {
-            id: volunteer.id,
-            name: volunteer.name,
-            username: volunteer.username,
-            event_id: volunteer.event_id,
-            has_password_hash: volunteer.password_hash ? 'YES' : 'NO'
+        const user = result.rows[0];
+        console.log('✅ Found user:', {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            role: user.role,
+            event_id: user.event_id
         });
         
         // Check password
-        console.log('Comparing password...');
-        const isMatch = await bcrypt.compare(password, volunteer.password_hash);
-        console.log('Password match result:', isMatch);
+        const isMatch = await bcrypt.compare(password, user.password_hash);
         
         if (!isMatch) {
-            console.log('❌ Password does not match for volunteer:', username);
+            console.log('❌ Password does not match');
             return res.status(400).json({ error: 'Invalid credentials' });
         }
         
         console.log('✅ Password matches! Creating token...');
         
-        // Create JWT token - use the same JWT_SECRET as other routes
-        const token = jwt.sign(
-            { 
-                id: volunteer.id, 
-                username: volunteer.username,
-                role: 'volunteer',
-                event_id: volunteer.event_id 
-            },
-            JWT_SECRET,
-            { expiresIn: '24h' }
-        );
+        // Create JWT token
+        const token = jwt.sign({ 
+            id: user.id, 
+            username: user.username,
+            name: user.name,
+            role: user.role,  // 'admin' or 'volunteer'
+            event_id: user.event_id,
+            current_floor: user.current_floor,
+            current_counter: user.current_counter
+        }, JWT_SECRET, { expiresIn: '24h' });
         
         console.log('✅ Token created successfully');
         console.log('=== LOGIN SUCCESSFUL ===');
@@ -223,19 +212,22 @@ router.post('/volunteer-login', async (req, res) => {
         res.json({
             token,
             user: {
-                id: volunteer.id,
-                name: volunteer.name,
-                username: volunteer.username,
-                role: 'volunteer',
-                event_id: volunteer.event_id
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                role: user.role,
+                event_id: user.event_id,
+                current_floor: user.current_floor,
+                current_counter: user.current_counter
             }
         });
         
     } catch (err) {
-        console.error('❌ Volunteer login error:', err);
+        console.error('❌ Login error:', err);
         res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 
 module.exports = router;
