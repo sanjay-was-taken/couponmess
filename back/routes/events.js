@@ -278,50 +278,7 @@ router.get('/:id/stats', async (req, res) => {
     }
 });
 
-// GET STATS FOR A SPECIFIC VOLUNTEER (Counter)
-router.get('/:id/stats/volunteer/:vid', async (req, res) => {
-    const { id, vid } = req.params;
-    try {
-        let totalReq, batchReq;
-        
-        try {
-            totalReq = await db.query(`
-                SELECT COUNT(*) 
-                FROM volunteer_actions va
-                JOIN registrations r ON va.registration_id = r.registration_id
-                WHERE r.event_id = $1 AND va.volunteer_id = $2
-            `, [id, vid]);
 
-            batchReq = await db.query(`
-                SELECT u.batch, COUNT(*) as count
-                FROM volunteer_actions va
-                JOIN registrations r ON va.registration_id = r.registration_id
-                JOIN users u ON r.student_id = u.user_id
-                WHERE r.event_id = $1 AND va.volunteer_id = $2
-                GROUP BY u.batch
-                ORDER BY u.batch ASC
-            `, [id, vid]);
-            
-        } catch (volunteerError) {
-            // Fallback
-            totalReq = await db.query(`SELECT COUNT(*) FROM registrations r WHERE r.event_id = $1 AND r.status = 'served'`, [id]);
-            batchReq = await db.query(`SELECT u.batch, COUNT(*) as count FROM registrations r JOIN users u ON r.student_id = u.user_id WHERE r.event_id = $1 AND r.status = 'served' GROUP BY u.batch`, [id]);
-        }
-
-        const volunteerReq = await db.query(`SELECT name FROM volunteers WHERE id = $1`, [vid]);
-        const volunteerName = volunteerReq.rows[0]?.name || 'Unknown Volunteer';
-        
-        res.json({
-            total: parseInt(totalReq.rows[0].count),
-            byBatch: batchReq.rows,
-            volunteerName: volunteerName
-        });
-
-    } catch (err) {
-        console.error('❌ Volunteer stats error:', err);
-        res.status(500).json({ error: "Server error fetching volunteer stats" });
-    }
-});
 
 // ==========================================
 // 8. ACTIVE & STUDENT EVENTS
