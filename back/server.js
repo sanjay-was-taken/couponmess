@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const authRoutes = require('./routes/auth'); // <--- Import
+const db = require('./db'); // Add this line
 
 
 const app = express();
