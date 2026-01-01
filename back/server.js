@@ -33,7 +33,6 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(` SUCCESS! Server running on port ${PORT}`);
 });
-
 const helmet = require('helmet');
 const compression = require('compression');
 
@@ -46,3 +45,32 @@ app.use((err, req, res, next) => {
     console.error('Global error:', err);
     res.status(500).json({ error: 'Internal server error' });
 });
+// Smart auto-close: only runs when there are active events
+setInterval(async () => {
+    try {
+        // Quick check: any active events?
+        const activeCheck = await db.query('SELECT COUNT(*) as count FROM events WHERE status = \'active\'');
+        const activeCount = parseInt(activeCheck.rows[0].count);
+        
+        if (activeCount > 0) {
+            // Run auto-close logic
+            const result = await db.query(`
+                UPDATE events 
+                SET status = 'closed' 
+                WHERE status = 'active' 
+                AND event_id IN (
+                    SELECT event_id FROM event_slots 
+                    GROUP BY event_id 
+                    HAVING MAX(time_end) < timezone('Asia/Kolkata', NOW())
+                )
+            `);
+            
+            if (result.rowCount > 0) {
+                console.log(`✅ Auto-closed ${result.rowCount} expired events`);
+            }
+        }
+    } catch (err) {
+        console.error('❌ Auto-close error:', err);
+    }
+}, 120000); // Every 2 minutes
+
