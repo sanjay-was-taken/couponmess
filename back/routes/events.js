@@ -288,18 +288,6 @@ router.get('/active', async (req, res) => {
     const studentId = req.query.student_id;
 
     try {
-        // ✅ RE-ADDED: Auto-Close Logic here too
-        await db.query(`
-            UPDATE events
-            SET status = 'closed'
-            WHERE status = 'active'
-            AND event_id IN (
-                SELECT event_id FROM event_slots
-                GROUP BY event_id
-                HAVING MAX(time_end) < (NOW() AT TIME ZONE 'UTC' + interval '5 hours 30 minutes')
-            )
-        `);
-        
         let query;
         let params = [];
         if (studentId) {
