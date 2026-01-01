@@ -5,17 +5,7 @@ const db = require('../db');
 const bcrypt = require('bcryptjs');
 
 // routes/events.js
-const createIndexes = async () => {
-    try {
-        await db.query('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_registrations_qr_token ON registrations(qr_token)');
-        await db.query('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_registrations_event_status ON registrations(event_id, status)');
-        await db.query('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_volunteer_actions_volunteer ON volunteer_actions(volunteer_id)');
-        await db.query('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_event_slots_event ON event_slots(event_id)');
-        console.log('✅ Database indexes created');
-    } catch (err) {
-        console.log('Indexes may already exist:', err.message);
-    }
-};
+
 
 
 
