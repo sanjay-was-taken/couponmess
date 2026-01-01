@@ -17,7 +17,6 @@ const createIndexes = async () => {
     }
 };
 
-createIndexes();
 
 
 // 1. GET ALL EVENTS (Admin)
