@@ -71,14 +71,6 @@ const AdminPage: React.FC = () => {
     return checkDate < now;
   };
 
-  // 🆕 Helper to check if event has fully expired based on its End Time
-  const hasEventEnded = (event: EventData) => {
-      if (!event.time_end) return false;
-      const endTime = new Date(event.time_end).getTime();
-      const now = new Date().getTime();
-      return endTime < now;
-  };
-
   // --- API Actions ---
   const fetchEvents = async () => {
     setFetching(true);
@@ -452,10 +444,6 @@ const AdminPage: React.FC = () => {
             </thead>
             <tbody>
               {events.map(event => {
-                // Only show as "Expired" if time has passed AND status is NOT active.
-                // If status is 'active', we assume the Admin kept it open on purpose.
-                const isExpired = hasEventEnded(event) && event.status !== 'active'; 
-
                 return (
                   <tr key={event.event_id}>
                     <td>
@@ -473,30 +461,23 @@ const AdminPage: React.FC = () => {
                     <td><span className="text-muted small fw-bold">{formatTime(event.time_start)} - {formatTime(event.time_end)}</span></td>
                     <td>{getStatusBadge(event)}</td>
                     
-                    {/* 👇 UPDATED BUTTON CONTAINER FOR MOBILE 👇 */}
                     <td className="text-end">
-                      {isExpired ? (
-                        <span className="text-muted small fst-italic">Expired</span>
-                      ) : (
-                        // Used d-flex with column direction on mobile (flex-column) and row on desktop (flex-md-row)
-                        // Added 'gap-2' for consistent spacing without margins
-                        <div className="d-flex flex-column flex-md-row gap-2 justify-content-md-end align-items-stretch">
-                          <Button 
-                            variant="outline-dark" 
-                            size="sm" 
-                            title="Manage Staff"
-                            onClick={() => handleManageVolunteers(event)}
-                          >
-                            <PersonBadge /> Staff
-                          </Button>
-                          <Button variant="outline-primary" size="sm" onClick={() => handleEditClick(event)}>
-                            <PencilSquare /> Edit
-                          </Button>
-                          <Button variant="outline-danger" size="sm" onClick={() => handleDelete(event.event_id)}>
-                            <Trash /> Delete
-                          </Button>
-                        </div>
-                      )}
+                      <div className="d-flex flex-column flex-md-row gap-2 justify-content-md-end align-items-stretch">
+                        <Button 
+                          variant="outline-dark" 
+                          size="sm" 
+                          title="Manage Staff"
+                          onClick={() => handleManageVolunteers(event)}
+                        >
+                          <PersonBadge /> Staff
+                        </Button>
+                        <Button variant="outline-primary" size="sm" onClick={() => handleEditClick(event)}>
+                          <PencilSquare /> Edit
+                        </Button>
+                        <Button variant="outline-danger" size="sm" onClick={() => handleDelete(event.event_id)}>
+                          <Trash /> Delete
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 );
