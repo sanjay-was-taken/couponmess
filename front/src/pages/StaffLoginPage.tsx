@@ -18,7 +18,7 @@ const StaffLoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-const handleSubmit = async (e: React.FormEvent) => {
+const handleStaffSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setLoading(true);
   setError('');
@@ -62,7 +62,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
           {error && <Alert variant="danger" className="py-2 text-center small">{error}</Alert>}
 
-          <Form onSubmit={handleSubmit}>
+          <Form onSubmit={handleStaffSubmit}>
             <Form.Group className="mb-3">
               <Form.Control 
                 type="text" 
