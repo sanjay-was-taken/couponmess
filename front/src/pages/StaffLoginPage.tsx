@@ -62,7 +62,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
           {error && <Alert variant="danger" className="py-2 text-center small">{error}</Alert>}
 
-          <Form onSubmit={handleStaffSubmit}>
+          <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Control 
                 type="text" 
