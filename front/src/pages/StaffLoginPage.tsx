@@ -18,29 +18,39 @@ const StaffLoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-const handleStaffSubmit = async (e: React.FormEvent) => {
+ const handleStaffSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  setLoading(true);
-  setError('');
+  setError(null);
+
+  if (!username.trim() || !password) {
+    setError("Please enter username and password");
+    return;
+  }
 
   try {
+    setLoading(true);
+
     // Single login attempt - works for both volunteers and admins
-    const response = await authApi.volunteerLogin({ username, password });
-    
-    localStorage.setItem('token', response.token);
-    
-    // Check role and redirect accordingly
-    if (response.user.role === 'admin') {
+    const data = await authApi.volunteerLogin({ 
+      username: username.trim(), 
+      password 
+    });
+
+    // Login Context (saves token to localStorage & state)
+    login(data.token, data.user);
+
+    // Redirect based on role
+    if (data.user.role === 'admin') {
       navigate('/admin');
-    } else if (response.user.role === 'volunteer') {
+    } else if (data.user.role === 'volunteer') {
       navigate('/staff');
     } else {
       throw new Error('Invalid user role');
     }
-    
+
   } catch (err: any) {
-    console.error('Login failed:', err);
-    setError(err.message || 'Login failed. Please check your credentials.');
+    console.error(err);
+    setError(err?.message || "Invalid credentials");
   } finally {
     setLoading(false);
   }
