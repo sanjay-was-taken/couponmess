@@ -2,7 +2,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://couponmess.onrende
 
 // Helper to handle headers and errors
 const request = async (endpoint: string, options: RequestInit = {}, retries = 2) => {
-  const token = localStorage.getItem('token'); 
+const token = localStorage.getItem('coupon_app_token');
   
   const headers = {
     'Content-Type': 'application/json',
