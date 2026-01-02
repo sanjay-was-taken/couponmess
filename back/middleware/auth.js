@@ -18,9 +18,16 @@ const authenticateToken = (req, res, next) => {
 // 2. Verify User is Admin
 const requireAdmin = (req, res, next) => {
     // This runs AFTER authenticateToken, so we have req.user
+    console.log('🔍 Admin check - User object:', req.user);
+    console.log('🔍 User role:', req.user.role);
+    console.log('🔍 Role type:', typeof req.user.role);
+    
     if (req.user.role !== 'admin') {
+        console.log('❌ Access denied - not admin');
         return res.status(403).json({ error: "Access Denied: Admins Only" });
     }
+    
+    console.log('✅ Admin access granted');
     next();
 };
 
