@@ -28,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check for existing session on load
   useEffect(() => {
-    localStorage.getItem('token');
+    const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('coupon_app_user');
     
     if (storedToken && storedUser) {
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(newToken);
     setUser(newUser);
     // Save to local storage
-    localStorage.setItem('coupon_app_token', newToken);
+    localStorage.setItem('token', newToken);
     localStorage.setItem('coupon_app_user', JSON.stringify(newUser));
   };
 
