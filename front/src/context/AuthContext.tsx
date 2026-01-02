@@ -28,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check for existing session on load
   useEffect(() => {
-    const storedToken = localStorage.getItem('coupon_app_token');
+    localStorage.getItem('token');
     const storedUser = localStorage.getItem('coupon_app_user');
     
     if (storedToken && storedUser) {
