@@ -8,7 +8,7 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 
 // 1. GET ALL EVENTS (Admin)
-router.get('/', async (req, res) => {
+router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         //  RE-ADDED: Auto-Close Logic
         // This checks if the event's End Time is less than the Current Time (in IST)
@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
 // ==========================================
 // 2. CREATE EVENT (Admin)
 // ==========================================
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     const { name, description, date, status } = req.body;
     try {
         const result = await db.query(
@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
 // ==========================================
 // 3. CLOSE / UPDATE EVENT (Admin)
 // ==========================================
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', authenticateToken, requireAdmin, async (req, res) => {
     const { id } = req.params;
     // We extract status explicitly. If the admin sends "active", we MUST respect it.
     let { name, description, date, status, time_start, time_end } = req.body;
@@ -101,7 +101,7 @@ router.patch('/:id', async (req, res) => {
 // ==========================================
 // 4. CREATE SLOT
 // ==========================================
-router.post('/:id/slots', async (req, res) => {
+router.post('/:id/slots', authenticateToken, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { floor, counter, capacity, time_start, time_end } = req.body;
     try {
@@ -120,7 +120,7 @@ router.post('/:id/slots', async (req, res) => {
 // ==========================================
 // 5. DELETE EVENT (Transactional Hard Delete)
 // ==========================================
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     const { id } = req.params;
     
     try {
@@ -168,7 +168,7 @@ router.delete('/:id', async (req, res) => {
 // ==========================================
 
 // GET Volunteers for an Event
-router.get('/:id/volunteers', async (req, res) => {
+router.get('/:id/volunteers', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const result = await db.query(
@@ -183,7 +183,7 @@ router.get('/:id/volunteers', async (req, res) => {
 });
 
 // ADD a New Volunteer
-router.post('/:id/volunteers', async (req, res) => {
+router.post('/:id/volunteers', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params; // event_id
         const { name, username, password } = req.body;
@@ -209,7 +209,7 @@ router.post('/:id/volunteers', async (req, res) => {
 });
 
 // DELETE VOLUNTEER
-router.delete('/volunteers/:id', async (req, res) => {
+router.delete('/volunteers/:id', authenticateToken, requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await db.query('DELETE FROM volunteer_actions WHERE volunteer_id = $1', [id]);
@@ -231,7 +231,7 @@ router.delete('/volunteers/:id', async (req, res) => {
 // ==========================================
 
 // GET EVENT STATISTICS (Admin)
-router.get('/:id/stats', async (req, res) => {
+router.get('/:id/stats', authenticateToken, requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const totalReq = await db.query(`
@@ -360,7 +360,7 @@ router.get('/all-for-student', async (req, res) => {
 
 
 // GET SCAN HISTORY
-router.get('/:id/scan-history', async (req, res) => {
+router.get('/:id/scan-history', authenticateToken, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const limit = Math.min(parseInt(req.query.limit) || 50, 100); // Max 100
     const offset = parseInt(req.query.offset) || 0;
@@ -392,7 +392,7 @@ router.get('/:id/scan-history', async (req, res) => {
 });
 
 // Optimized volunteer stats
-router.get('/:id/stats/volunteer/:vid', async (req, res) => {
+router.get('/:id/stats/volunteer/:vid', authenticateToken, requireAdmin, async (req, res) => {
     const { id, vid } = req.params;
     
     try {
@@ -430,7 +430,7 @@ router.get('/:id/stats/volunteer/:vid', async (req, res) => {
 });
 
 // GET available slots
-router.get('/:id/slots', async (req, res) => {
+router.get('/:id/slots', authenticateToken, requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await db.query(`
@@ -448,7 +448,7 @@ router.get('/:id/slots', async (req, res) => {
 });
 
 // UPDATE volunteer's assignment
-router.patch('/volunteers/:vid/assignment', async (req, res) => {
+router.patch('/volunteers/:vid/assignment', authenticateToken, requireAdmin, async (req, res) => {
     const { vid } = req.params;
     const { floor, counter } = req.body;
     try {
