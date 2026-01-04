@@ -392,7 +392,7 @@ router.get('/:id/scan-history', authenticateToken, requireAdmin, async (req, res
 });
 
 // Optimized volunteer stats
-router.get('/:id/stats/volunteer/:vid', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/:id/stats/volunteer/:vid', authenticateToken, async (req, res) => {
     const { id, vid } = req.params;
     
     try {
@@ -430,7 +430,7 @@ router.get('/:id/stats/volunteer/:vid', authenticateToken, requireAdmin, async (
 });
 
 // GET available slots
-router.get('/:id/slots', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/:id/slots', authenticateToken, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await db.query(`
@@ -448,7 +448,7 @@ router.get('/:id/slots', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // UPDATE volunteer's assignment
-router.patch('/volunteers/:vid/assignment', authenticateToken, requireAdmin, async (req, res) => {
+router.patch('/volunteers/:vid/assignment', authenticateToken, async (req, res) => {
     const { vid } = req.params;
     const { floor, counter } = req.body;
     try {
@@ -471,7 +471,7 @@ router.patch('/volunteers/:vid/assignment', authenticateToken, requireAdmin, asy
 });
 
 // GET SCAN HISTORY FOR SPECIFIC VOLUNTEER (Last 10 scans by that volunteer only)
-router.get('/:id/scan-history/volunteer/:volunteerId', async (req, res) => {
+router.get('/:id/scan-history/volunteer/:volunteerId', authenticateToken, async (req, res) => {
     const { id, volunteerId } = req.params;
     
     try {
