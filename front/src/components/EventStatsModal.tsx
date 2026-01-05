@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Card, Row, Col, Table, ProgressBar, Spinner, Alert } from 'react-bootstrap';
-import { BarChartFill, PeopleFill, Shop, ClockHistory } from 'react-bootstrap-icons'; 
+import { Modal, Button, Card, Row, Col, Table, ProgressBar, Spinner, Alert, Badge } from 'react-bootstrap';
+import { BarChartFill, PeopleFill, Shop, ClockHistory, ChevronLeft, ChevronRight } from 'react-bootstrap-icons'; 
 import { eventsApi } from '../services/api';
 
 interface EventStatsModalProps {
@@ -24,34 +24,36 @@ interface ScanLog {
   scanned_at: string;
 }
 
+const ITEMS_PER_PAGE = 50;
+
 const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId, eventName }) => {
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false); // Separate loading for table
   const [stats, setStats] = useState<EventStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // --- Pagination State ---
   const [scanHistory, setScanHistory] = useState<ScanLog[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
+  // 1. Reset on open
   useEffect(() => {
     if (show && eventId) {
-      fetchStats();
+      setPage(1); // Reset to first page
+      fetchOverallStats();
+      fetchHistory(1); // Fetch page 1
     }
   }, [show, eventId]);
 
-  const fetchStats = async () => {
+  // 2. Fetch Graphs and Totals (Run once on open)
+  const fetchOverallStats = async () => {
+    if (!eventId) return;
     setLoading(true);
     setError(null);
-    setStats(null);
-    setScanHistory([]); 
-    
     try {
-      if (!eventId) return;
-
-      const [statsData, scanHistoryData] = await Promise.all([
-        eventsApi.getStats(eventId),
-        eventsApi.getScanHistory(eventId)
-      ]);
-      
+      const statsData = await eventsApi.getStats(eventId);
       setStats(statsData);
-      setScanHistory(scanHistoryData.scanHistory || []);
     } catch (err) {
       console.error(err);
       setError('Could not load statistics.');
@@ -60,13 +62,42 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
     }
   };
 
-  // 🆕 ROBUST TIME HELPER
-  // Handles both "2025-12-30T10:00:00Z" (Future correct DB) AND "06:53 am" (Current raw DB)
+  // 3. Fetch History Table (Runs on page change)
+  const fetchHistory = async (pageNum: number) => {
+    if (!eventId) return;
+    setHistoryLoading(true);
+    try {
+      const offset = (pageNum - 1) * ITEMS_PER_PAGE;
+      const data = await eventsApi.getScanHistory(eventId, ITEMS_PER_PAGE, offset);
+      
+      setScanHistory(data.scanHistory || []);
+      setHasMore(data.hasMore); // Backend tells us if there are more records
+    } catch (err) {
+      console.error("Failed to load history", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      const newPage = page + 1;
+      setPage(newPage);
+      fetchHistory(newPage);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (page > 1) {
+      const newPage = page - 1;
+      setPage(newPage);
+      fetchHistory(newPage);
+    }
+  };
+
   const formatScanTime = (timeStr: string) => {
     if (!timeStr) return '-';
-
     const standardDate = new Date(timeStr);
-    // Check if valid date
     if (!isNaN(standardDate.getTime()) && (timeStr.includes('T') || timeStr.includes('-'))) {
        return standardDate.toLocaleTimeString('en-IN', { 
            hour: '2-digit', 
@@ -75,7 +106,6 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
            timeZone: 'Asia/Kolkata' 
        });
     }
-
     return timeStr;
   };
 
@@ -91,7 +121,7 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
         {loading ? (
           <div className="text-center p-5">
             <Spinner animation="border" variant="success" />
-            <p className="mt-2 text-muted">Crunching numbers...</p>
+            <p className="mt-2 text-muted">Loading Analytics...</p>
           </div>
         ) : error ? (
           <Alert variant="danger">{error}</Alert>
@@ -171,42 +201,78 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
               </Col>
             </Row>
 
-            {/* 4. Scan History (Added Here) */}
-            {scanHistory.length > 0 && (
-              <Card className="mt-4 border-0 shadow-sm">
-                <Card.Header className="bg-white fw-bold py-3 d-flex align-items-center">
+            {/* 4. Scan History with Pagination */}
+            <Card className="mt-4 border-0 shadow-sm">
+              <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                <span>
                   <ClockHistory className="me-2 text-secondary" />
-                  Recent Scans (Last 50)
-                </Card.Header>
-                <Card.Body className="p-0" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  <Table hover borderless className="mb-0 align-middle">
-                    <thead className="bg-light sticky-top">
-                      <tr>
+                  Scan History
+                </span>
+                <Badge bg="light" text="dark" className="border">
+                    Page {page}
+                </Badge>
+              </Card.Header>
+              
+              <Card.Body className="p-0" style={{ minHeight: '200px' }}>
+                {historyLoading ? (
+                    <div className="text-center py-5">
+                        <Spinner animation="border" size="sm" variant="success"/>
+                    </div>
+                ) : scanHistory.length === 0 ? (
+                    <div className="text-center py-5 text-muted small">No records found.</div>
+                ) : (
+                    <Table hover borderless className="mb-0 align-middle">
+                    <thead className="bg-light">
+                        <tr>
                         <th className="ps-3">Name</th>
-                        <th>Email/ID</th>
+                        <th>Roll No</th>
                         <th>Batch</th>
                         <th>Counter</th>
                         <th>Time</th>
-                      </tr>
+                        </tr>
                     </thead>
                     <tbody>
-                      {scanHistory.map((scan, idx) => (
+                        {scanHistory.map((scan, idx) => (
                         <tr key={idx}>
-                          <td className="ps-3 fw-medium">{scan.student_name}</td>
-                          <td className="text-muted small">{scan.roll_number}</td>
-                          <td><span className="badge bg-light text-dark border">{scan.batch}</span></td>
-                          <td>{scan.counter_name}</td>
-                          <td className="text-muted small">
-                            {/* USE THE NEW HELPER HERE */}
-                            {formatScanTime(scan.scanned_at)}
-                          </td>
+                            <td className="ps-3 fw-medium">{scan.student_name}</td>
+                            <td className="text-muted small">{scan.roll_number}</td>
+                            <td><span className="badge bg-light text-dark border">{scan.batch}</span></td>
+                            <td>{scan.counter_name}</td>
+                            <td className="text-muted small">{formatScanTime(scan.scanned_at)}</td>
                         </tr>
-                      ))}
+                        ))}
                     </tbody>
-                  </Table>
-                </Card.Body>
-              </Card>
-            )}
+                    </Table>
+                )}
+              </Card.Body>
+
+              {/* PAGINATION FOOTER */}
+              <Card.Footer className="bg-white border-top-0 py-3">
+                  <div className="d-flex justify-content-between align-items-center">
+                      <Button 
+                        variant="outline-secondary" 
+                        size="sm" 
+                        onClick={handlePrevPage} 
+                        disabled={page === 1 || historyLoading}
+                      >
+                          <ChevronLeft className="me-1"/> Previous
+                      </Button>
+                      
+                      <small className="text-muted">
+                        Showing {(page - 1) * ITEMS_PER_PAGE + 1} - {(page - 1) * ITEMS_PER_PAGE + scanHistory.length}
+                      </small>
+
+                      <Button 
+                        variant="outline-secondary" 
+                        size="sm" 
+                        onClick={handleNextPage} 
+                        disabled={!hasMore || historyLoading}
+                      >
+                          Next <ChevronRight className="ms-1"/>
+                      </Button>
+                  </div>
+              </Card.Footer>
+            </Card>
 
           </div>
         ) : (
@@ -221,4 +287,3 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
 };
 
 export default EventStatsModal;
-
