@@ -77,9 +77,9 @@ export const eventsApi = {
 
   createSlots: (eventId: number, slotData: any) => 
     request(`/events/${eventId}/slots`, { method: 'POST', body: JSON.stringify(slotData) }),
-
-  getScanHistory: (eventId: number) => 
-    request(`/events/${eventId}/scan-history`),
+  
+  getScanHistory: (eventId: number, limit: number = 50, offset: number = 0) => 
+    request(`/events/${eventId}/scan-history?limit=${limit}&offset=${offset}`),
 
   getVolunteerScanHistory: (eventId: number, volunteerId: number) => 
     request(`/events/${eventId}/scan-history/volunteer/${volunteerId}`),
