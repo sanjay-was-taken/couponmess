@@ -253,7 +253,7 @@ router.get('/:id/stats', authenticateToken, requireAdmin, async (req, res) => {
 
         const counterReq = await db.query(`
             SELECT 
-                CONCAT('Floor ', va.floor, ' - Counter ', va.counter) as counter_name, 
+                CONCAT(va.floor, ' - Counter ', va.counter) as counter_name, 
                 COUNT(*) as count
             FROM volunteer_actions va
             JOIN registrations r ON va.registration_id = r.registration_id
@@ -371,7 +371,7 @@ router.get('/:id/scan-history', authenticateToken, requireAdmin, async (req, res
                 u.name as student_name,
                 u.email as roll_number,
                 u.batch,
-                COALESCE(CONCAT('Floor ', va.floor, ' - Counter ', va.counter), 'Staff') as counter_name,
+                COALESCE(CONCAT(va.floor, ' - Counter ', va.counter), 'Staff') as counter_name,
                 timezone('Asia/Kolkata', r.served_at) as scanned_at
             FROM registrations r
             JOIN users u ON r.student_id = u.user_id
@@ -480,7 +480,7 @@ router.get('/:id/scan-history/volunteer/:volunteerId', authenticateToken, async 
                 u.name as student_name,
                 u.email as roll_number,
                 u.batch,
-                CONCAT('Floor ', va.floor, ' - Counter ', va.counter) as counter_name,
+                CONCAT(va.floor, ' - Counter ', va.counter) as counter_name,
                 timezone('Asia/Kolkata', r.served_at) as scanned_at
             FROM registrations r
             JOIN users u ON r.student_id = u.user_id
