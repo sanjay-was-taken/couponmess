@@ -250,7 +250,7 @@ export const StaffPage = () => {
     } finally {
       setLoading(false);
     }
-
+  };
   const handleReset = () => {
     setScanResult(null);
     setShowScanner(true);
