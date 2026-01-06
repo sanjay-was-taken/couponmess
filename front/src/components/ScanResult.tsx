@@ -1,7 +1,5 @@
 import React from 'react';
 import { Button, Container } from 'react-bootstrap';
-import colors from '../assets/constants/colors';
-
 import { 
   CheckCircleFill, 
   ExclamationTriangleFill, 
@@ -24,23 +22,29 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
   let IconComponent;
   let iconColor = '';
   let backgroundColor = '';
+  let textColor = '';
 
   switch (result.status) {
     case 'success':
       IconComponent = CheckCircleFill;
-      iconColor = colors.success.main;
-      backgroundColor = colors.success.background;
+      iconColor = '#198754'; // Bootstrap success (Green)
+      backgroundColor = '#d1e7dd'; // Light Green
+      textColor = '#0f5132';
       break;
-    case 'warning':
+
+    case 'warning': // 🟡 HANDLING THE WARNING CASE
       IconComponent = ExclamationTriangleFill;
-      iconColor = colors.warning.main;
-      backgroundColor = colors.warning.background;
+      iconColor = '#fd7e14'; // Bootstrap Orange/Yellow
+      backgroundColor = '#fff3cd'; // Light Yellow
+      textColor = '#664d03';
       break;
+
     case 'error':
     default:
       IconComponent = XCircleFill;
-      iconColor = colors.error.main;
-      backgroundColor = colors.error.background;
+      iconColor = '#dc3545'; // Bootstrap danger (Red)
+      backgroundColor = '#f8d7da'; // Light Red
+      textColor = '#842029';
       break;
   }
 
@@ -50,8 +54,8 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
       className="d-flex flex-column justify-content-center align-items-center"
       style={{ 
         height: '100vh', 
-        backgroundColor: backgroundColor,
-        padding: '1rem'
+        backgroundColor: backgroundColor, 
+        padding: '1rem' 
       }}
     >
       {/* Icon */}
@@ -60,21 +64,22 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
         color={iconColor}
       />
 
-      {/* Title - Added text-center */}
-      <h1 className="mt-4 text-center" style={{ fontWeight: 'bold' }}>
+      {/* Title */}
+      <h1 className="mt-4 text-center fw-bold" style={{ color: textColor }}>
         {result.title}
       </h1>
 
-      {/* Message - Added text-center and padding */}
-      <p className="text-secondary h5 mt-2 text-center px-3">
+      {/* Message */}
+      <p className="h5 mt-2 text-center px-3" style={{ color: textColor, opacity: 0.9 }}>
         {result.message}
       </p>
 
       {/* Scan Next Button */}
       <Button 
-        variant="success" 
+        variant={result.status === 'warning' ? 'warning' : (result.status === 'success' ? 'success' : 'danger')} 
         size="lg"
-        className="mt-5"
+        className="mt-5 text-white fw-bold shadow-sm"
+        style={{ minWidth: '200px' }}
         onClick={onScanNext} 
       >
         Scan Next
@@ -84,28 +89,3 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
 };
 
 export default ScanResult;
-
-{/*
-to use this component 
-first import it 
-
-import ScanResult from './components/ScanResult';
-import type { ScanResult as ScanResultType } from './components/ScanResult';
-
-inside App function
-    const mockResult: ScanResultType = {
-        status: 'error', // Try 'error' or 'warning' to see different styles
-        title: 'Invalid Coupon!',
-        message: 'This is just a test'
-    };
-
-    const mockScanNext = () => {
-        alert("Clicked 'Scan Next'");
-    };
-
-
-inside return
-    <ScanResult result={mockResult} onScanNext={mockScanNext} />
-
-
-*/}
