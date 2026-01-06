@@ -235,10 +235,13 @@ export const StaffPage = () => {
       });
 
     } catch (err: any) {
-      console.error('Scan error:', err);
+      console.error('Scan error raw:', err); // Debugging line
       
       const errorMessage = err.message || 'Invalid Token';
-      const isWarning = errorMessage.toLowerCase().includes("already served");
+      
+      // The .toLowerCase() makes it case-insensitive
+      const isWarning = errorMessage.toLowerCase().includes("served") || 
+                        errorMessage.toLowerCase().includes("redeemed");
 
       setScanResult({
         status: isWarning ? 'warning' : 'error',
@@ -247,7 +250,6 @@ export const StaffPage = () => {
     } finally {
       setLoading(false);
     }
-  };
 
   const handleReset = () => {
     setScanResult(null);
