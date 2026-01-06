@@ -23,28 +23,33 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
   let iconColor = '';
   let backgroundColor = '';
   let textColor = '';
+  let btnVariant = '';
 
   switch (result.status) {
     case 'success':
       IconComponent = CheckCircleFill;
-      iconColor = '#198754'; // Bootstrap success (Green)
-      backgroundColor = '#d1e7dd'; // Light Green
+      iconColor = '#198754'; // Green
+      backgroundColor = '#d1e7dd'; 
       textColor = '#0f5132';
+      btnVariant = 'success';
       break;
 
-    case 'warning': // 🟡 HANDLING THE WARNING CASE
+    case 'warning': 
+      // 🟡 WARNING STATE (Yellow)
       IconComponent = ExclamationTriangleFill;
-      iconColor = '#fd7e14'; // Bootstrap Orange/Yellow
-      backgroundColor = '#fff3cd'; // Light Yellow
-      textColor = '#664d03';
+      iconColor = '#fd7e14'; // Orange/Yellow
+      backgroundColor = '#fff3cd'; // Light Yellow Background
+      textColor = '#664d03'; // Dark Yellow Text
+      btnVariant = 'warning'; // Bootstrap yellow button
       break;
 
     case 'error':
     default:
       IconComponent = XCircleFill;
-      iconColor = '#dc3545'; // Bootstrap danger (Red)
-      backgroundColor = '#f8d7da'; // Light Red
+      iconColor = '#dc3545'; // Red
+      backgroundColor = '#f8d7da'; 
       textColor = '#842029';
+      btnVariant = 'danger';
       break;
   }
 
@@ -55,7 +60,8 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
       style={{ 
         height: '100vh', 
         backgroundColor: backgroundColor, 
-        padding: '1rem' 
+        padding: '1rem',
+        transition: 'background-color 0.3s ease'
       }}
     >
       {/* Icon */}
@@ -76,13 +82,13 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
 
       {/* Scan Next Button */}
       <Button 
-        variant={result.status === 'warning' ? 'warning' : (result.status === 'success' ? 'success' : 'danger')} 
+        variant={btnVariant} 
         size="lg"
         className="mt-5 text-white fw-bold shadow-sm"
         style={{ minWidth: '200px' }}
         onClick={onScanNext} 
       >
-        Scan Next
+        {result.status === 'warning' ? 'Scan Next' : 'Scan Next'}
       </Button>
     </Container>
   );
