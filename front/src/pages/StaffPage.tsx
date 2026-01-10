@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Spinner, ListGroup } from 'react-bootstrap';
 import { QrScanner } from '../components/QrScanner';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
+import { useTheme } from '../context/ThemeContext'; 
 import ScanResult from '../components/ScanResult';
 import VolunteerStatsModal from '../components/VolunteerStatsModal'; 
-import { CalendarEvent } from 'react-bootstrap-icons';
+import { CalendarEvent, GeoAltFill } from 'react-bootstrap-icons'; // Added GeoAltFill for badge
 import { registrationApi, eventsApi } from '../services/api';
 import VolunteerAssignmentModal from '../components/VolunteerAssignmentModal';
 
@@ -28,10 +28,10 @@ const formatScanTime = (timeStr: string) => {
   }
 };
 
-// --- UPDATED RECENT SCANS COMPONENT ---
+// --- RECENT SCANS COMPONENT ---
 const RecentScansSection: React.FC<{ eventId: number }> = ({ eventId }) => {
   const { user } = useAuth();
-  const { colors } = useTheme(); // Use Theme colors
+  const { colors } = useTheme(); 
   const [recentScans, setRecentScans] = useState<ScanLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +136,7 @@ interface EventData {
 
 export const StaffPage = () => {
   const { user } = useAuth();
-  const { colors } = useTheme(); // Use Theme colors
+  const { colors } = useTheme(); 
   
   const [showScanner, setShowScanner] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -144,7 +144,10 @@ export const StaffPage = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<{id: number, name: string} | null>(null);
+  
+  // Assignment State
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  // FIX: Start null to ensure we force selection
   const [volunteerAssignment, setVolunteerAssignment] = useState<{floor: string, counter: string} | null>(null);
 
   useEffect(() => {
@@ -169,19 +172,19 @@ export const StaffPage = () => {
     }
   }, [user]);
 
+  // FIX: Force modal on mount if assignment isn't set in LOCAL state
   useEffect(() => {
     const volunteerUser = user as any;
     if (volunteerUser && volunteerUser.role === 'volunteer') {
-      if (!volunteerUser.current_floor || !volunteerUser.current_counter) {
+      
+      // If we haven't selected an assignment in this session yet, open modal.
+      // We explicitly ignore the persisted `volunteerUser.current_floor` for initialization
+      // so that the user is forced to confirm their spot every time they log in or refresh.
+      if (!volunteerAssignment) {
         setShowAssignmentModal(true);
-      } else {
-        setVolunteerAssignment({
-          floor: volunteerUser.current_floor,
-          counter: volunteerUser.current_counter
-        });
       }
     }
-  }, [user]);
+  }, [user, volunteerAssignment]);
 
   const handleOpenStats = (event: EventData) => {
       setSelectedEvent({ id: event.event_id, name: event.name });
@@ -252,91 +255,114 @@ export const StaffPage = () => {
 
   return (
     <Container className="py-5" style={{ backgroundColor: colors.ui.background, minHeight: '100vh' }}>
+      
       <div className="text-center mb-5">
         <h2 className="fw-bold" style={{ color: colors.text.primary }}>Volunteer Scanner</h2>
         <p style={{ color: colors.text.secondary }}>Scan student QR codes to mark them as served.</p>
+        
+        {/* Show current assignment badge only if selected */}
+        {volunteerAssignment && (
+            <div className="mt-2">
+                <span className="badge bg-success px-3 py-2">
+                    <GeoAltFill className="me-2"/>
+                    {volunteerAssignment.floor} - Counter {volunteerAssignment.counter}
+                </span>
+            </div>
+        )}
       </div>
 
       <Row className="justify-content-center">
         <Col xs={12} md={8} lg={6}>
           
-          {!showScanner && !loading && (
-            <Card className="text-center p-5 shadow-sm border-0 mb-5" style={{ backgroundColor: colors.ui.card }}>
-              <div className="mb-3" style={{ color: colors.primary.main }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
-                  <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
-                </svg>
-              </div>
-              <h4 style={{ color: colors.text.primary }}>Ready to Serve?</h4>
-              <Button 
-                variant="primary" 
-                size="lg" 
-                className="mt-3 px-5 rounded-pill" 
-                onClick={() => setShowScanner(true)}
-                style={{ backgroundColor: colors.primary.main, borderColor: colors.primary.main }}
-              >
-                Start Camera
-              </Button>
-            </Card>
-          )}
-
-          {loading && (
-            <div className="text-center p-5">
-                <Spinner animation="border" style={{ color: colors.primary.main }} />
-                <p className="mt-3 fw-bold" style={{ color: colors.text.secondary }}>Verifying Coupon...</p>
-            </div>
-          )}
-
-          {showScanner && (
-            <Card className="shadow-lg border-0 overflow-hidden mb-5">
-              <Card.Header className="text-center py-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: colors.ui.card, borderBottom: `1px solid ${colors.ui.border}` }}>
-                <span className="fw-bold" style={{ color: colors.text.primary }}>Scanning...</span>
-                <Button variant="outline-secondary" size="sm" onClick={() => setShowScanner(false)}>Close</Button>
-              </Card.Header>
-              <Card.Body className="p-0 bg-black">
-                <QrScanner 
-                  onScanSuccess={handleScanSuccess}
-                />
-              </Card.Body>
-            </Card>
-          )}
-
-          {!showScanner && !loading && (
-            <div className="mt-4">
-                <h5 className="fw-bold mb-3 border-bottom pb-2" style={{ color: colors.text.secondary, borderColor: colors.ui.border }}>Current Event</h5>
-                {events.length === 0 ? (
-                    <p className="small" style={{ color: colors.text.secondary }}>No event assigned.</p>
-                ) : (
-                    <Card className="shadow-sm border-0 mb-4" style={{ backgroundColor: colors.ui.card }}>
-                        <Card.Body className="p-4">
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="rounded-circle d-flex align-items-center justify-content-center me-3" 
-                                    style={{ width: '48px', height: '48px', minWidth: '48px', backgroundColor: colors.ui.background, color: colors.primary.main }}>
-                                    <CalendarEvent size={20} />
-                                </div>
-                                <div className="flex-grow-1">
-                                    <h6 className="fw-bold mb-1" style={{ color: colors.text.primary }}>{events[0].name}</h6>
-                                    <small style={{ color: colors.text.secondary }}>Your assigned event</small>
-                                </div>
-                            </div>
-                            
-                            <Button 
-                                variant="outline-success" 
-                                size="sm" 
-                                onClick={() => handleOpenStats(events[0])}
-                                className="w-100"
-                                style={{ color: colors.primary.main, borderColor: colors.primary.main }}
-                            >
-                                View Your Stats
-                            </Button>
-                        </Card.Body>
+          {/* LOGIC FIX: HIDE DASHBOARD IF NO ASSIGNMENT
+              This prevents the user from using the scanner until they complete the modal. 
+          */}
+          {!volunteerAssignment ? (
+             <div className="text-center py-5">
+                <Spinner animation="border" style={{ color: colors.primary.main }} className="mb-3"/>
+                <p style={{ color: colors.text.secondary }}>Please select your work station...</p>
+             </div>
+          ) : (
+             <>
+                {!showScanner && !loading && (
+                    <Card className="text-center p-5 shadow-sm border-0 mb-5" style={{ backgroundColor: colors.ui.card }}>
+                    <div className="mb-3" style={{ color: colors.primary.main }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
+                        <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                        </svg>
+                    </div>
+                    <h4 style={{ color: colors.text.primary }}>Ready to Serve?</h4>
+                    <Button 
+                        variant="primary" 
+                        size="lg" 
+                        className="mt-3 px-5 rounded-pill" 
+                        onClick={() => setShowScanner(true)}
+                        style={{ backgroundColor: colors.primary.main, borderColor: colors.primary.main }}
+                    >
+                        Start Camera
+                    </Button>
                     </Card>
                 )}
-                
-                {/* Recent Scans Section */}
-                <RecentScansSection eventId={(user as any)?.event_id} />
-            </div>
+
+                {loading && (
+                    <div className="text-center p-5">
+                        <Spinner animation="border" style={{ color: colors.primary.main }} />
+                        <p className="mt-3 fw-bold" style={{ color: colors.text.secondary }}>Verifying Coupon...</p>
+                    </div>
+                )}
+
+                {showScanner && (
+                    <Card className="shadow-lg border-0 overflow-hidden mb-5">
+                    <Card.Header className="text-center py-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: colors.ui.card, borderBottom: `1px solid ${colors.ui.border}` }}>
+                        <span className="fw-bold" style={{ color: colors.text.primary }}>Scanning...</span>
+                        <Button variant="outline-secondary" size="sm" onClick={() => setShowScanner(false)}>Close</Button>
+                    </Card.Header>
+                    <Card.Body className="p-0 bg-black">
+                        <QrScanner 
+                        onScanSuccess={handleScanSuccess}
+                        />
+                    </Card.Body>
+                    </Card>
+                )}
+
+                {!showScanner && !loading && (
+                    <div className="mt-4">
+                        <h5 className="fw-bold mb-3 border-bottom pb-2" style={{ color: colors.text.secondary, borderColor: colors.ui.border }}>Current Event</h5>
+                        {events.length === 0 ? (
+                            <p className="small" style={{ color: colors.text.secondary }}>No event assigned.</p>
+                        ) : (
+                            <Card className="shadow-sm border-0 mb-4" style={{ backgroundColor: colors.ui.card }}>
+                                <Card.Body className="p-4">
+                                    <div className="d-flex align-items-center mb-3">
+                                        <div className="rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                            style={{ width: '48px', height: '48px', minWidth: '48px', backgroundColor: colors.ui.background, color: colors.primary.main }}>
+                                            <CalendarEvent size={20} />
+                                        </div>
+                                        <div className="flex-grow-1">
+                                            <h6 className="fw-bold mb-1" style={{ color: colors.text.primary }}>{events[0].name}</h6>
+                                            <small style={{ color: colors.text.secondary }}>Your assigned event</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <Button 
+                                        variant="outline-success" 
+                                        size="sm" 
+                                        onClick={() => handleOpenStats(events[0])}
+                                        className="w-100"
+                                        style={{ color: colors.primary.main, borderColor: colors.primary.main }}
+                                    >
+                                        View Your Stats
+                                    </Button>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        
+                        {/* Recent Scans Section */}
+                        <RecentScansSection eventId={(user as any)?.event_id} />
+                    </div>
+                )}
+             </>
           )}
 
         </Col>
