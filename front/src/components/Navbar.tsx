@@ -1,13 +1,12 @@
 import React from 'react';
-import { Navbar, Container, Button, Dropdown } from 'react-bootstrap';
+import { Navbar, Container, Dropdown } from 'react-bootstrap'; 
 import { PersonCircle, BoxArrowRight, ShieldLock } from 'react-bootstrap-icons';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../context/AuthContext';
 
 const AppNavbar: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -23,11 +22,16 @@ const AppNavbar: React.FC = () => {
     if (!isAuthenticated || !user) return "/login";
     if (user.role === 'admin') return "/admin";
     if (user.role === 'volunteer') return "/staff";
-    return "/dashboard"; // Default for students
+    return "/dashboard"; 
   };
 
   return (
-    <Navbar bg="white" className="shadow-sm border-bottom sticky-top py-3">
+    <Navbar 
+      bg="white" 
+      className="shadow-sm border-bottom sticky-top"
+      // 1. INCREASED HEIGHT: Changed minHeight to 90px and padding to py-3
+      style={{ minHeight: '90px', padding: '12px 0' }} 
+    >
       <Container className="d-flex justify-content-between align-items-center">
         
         {/* LOGO (Left Side) */}
@@ -39,84 +43,69 @@ const AppNavbar: React.FC = () => {
           <img 
             src="/klee-logo.png" 
             alt="Klee Logo" 
-            style={{ height: '35px', width: 'auto' }} 
-            className="me-2"
+            // 2. INCREASED LOGO SIZE
+            style={{ height: '42px', width: 'auto' }} 
+            className="me-3"
           />
-          <span style={{ letterSpacing: '-0.5px', fontSize: '1.2rem' }}>FeastOn</span>
+          {/* 3. INCREASED TEXT SIZE */}
+          <span style={{ letterSpacing: '-0.5px', fontSize: '1.4rem' }}>FeastOn</span>
         </Navbar.Brand>
         
         {/* RIGHT SIDE CONTENT */}
         <div className="d-flex align-items-center">
           
-          {isAuthenticated && user ? (
-            // --- LOGGED IN STATE ---
+          {isAuthenticated && user && (
             <Dropdown align="end">
               <Dropdown.Toggle 
                 variant="light" 
                 id="dropdown-basic" 
-                className="d-flex align-items-center border bg-white rounded-pill px-2 px-md-3 py-1 py-md-2 shadow-sm"
+                // Increased padding for a larger button look
+                className="d-flex align-items-center border bg-white rounded-pill px-3 py-2 shadow-sm"
                 style={{ transition: 'all 0.2s' }}
               >
-                {/* Avatar Circle */}
                 <div className="bg-light rounded-circle p-1 text-success d-flex align-items-center justify-content-center">
-                  <PersonCircle size={24}/>
+                  {/* 4. INCREASED ICON SIZE */}
+                  <PersonCircle size={30}/>
                 </div>
                 
-                {/* Name (Desktop only) */}
-                <span className="fw-semibold small text-dark ms-2 d-none d-sm-block">
+                {/* 5. INCREASED NAME SIZE (Removed 'small' class, added fontSize) */}
+                <span className="fw-semibold text-dark ms-3 d-none d-sm-block" style={{ fontSize: '1rem' }}>
                   {getCleanName(user.name)}
                 </span>
               </Dropdown.Toggle>
 
-              <Dropdown.Menu className="shadow-lg border-0 mt-3 p-2 rounded-4" style={{ minWidth: '240px', position: 'absolute' }}>
+              <Dropdown.Menu className="shadow-lg border-0 mt-3 p-2 rounded-4" style={{ minWidth: '260px', position: 'absolute' }}>
                 
-                {/* Name Display (Mobile) */}
+                {/* Mobile Name */}
                 <div className="px-3 py-2 border-bottom mb-2 d-block d-sm-none">
-                  <p className="mb-0 fw-bold text-dark">{getCleanName(user.name)}</p>
+                  <p className="mb-0 fw-bold text-dark" style={{ fontSize: '1.1rem' }}>{getCleanName(user.name)}</p>
                 </div>
 
-                {/* Name Display (Desktop) */}
+                {/* Desktop Name */}
                 <div className="px-3 py-2 border-bottom mb-2 d-none d-sm-block">
-                  <p className="mb-0 fw-bold text-dark">{getCleanName(user.name)}</p>
-                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>{user.email}</small>
+                  <p className="mb-0 fw-bold text-dark" style={{ fontSize: '1.1rem' }}>{getCleanName(user.name)}</p>
+                  <small className="text-muted" style={{ fontSize: '0.85rem' }}>{user.email}</small>
                 </div>
 
-                {/* Role Badge */}
                 <Dropdown.ItemText className="mb-2">
-                  <span className={`badge bg-${user.role === 'admin' ? 'danger' : 'primary'}-subtle text-${user.role === 'admin' ? 'danger' : 'primary'} border border-${user.role === 'admin' ? 'danger' : 'primary'}-subtle rounded-pill px-3`}>
+                  <span className={`badge bg-${user.role === 'admin' ? 'danger' : 'primary'}-subtle text-${user.role === 'admin' ? 'danger' : 'primary'} border border-${user.role === 'admin' ? 'danger' : 'primary'}-subtle rounded-pill px-3 py-2`} style={{ fontSize: '0.85rem' }}>
                     {user.role.toUpperCase()}
                   </span>
                 </Dropdown.ItemText>
 
-                {/* Admin Link (Only if Admin) */}
                 {user.role === 'admin' && (
-                  <Dropdown.Item as={Link} to="/admin" className="rounded-3 py-2">
+                  <Dropdown.Item as={Link} to="/admin" className="rounded-3 py-2" style={{ fontSize: '1rem' }}>
                     <ShieldLock className="me-2" /> Admin Panel
                   </Dropdown.Item>
                 )}
 
                 <Dropdown.Divider className="my-2" />
 
-                {/* Logout */}
-                <Dropdown.Item onClick={handleLogout} className="text-danger rounded-3 py-2 fw-semibold">
+                <Dropdown.Item onClick={handleLogout} className="text-danger rounded-3 py-2 fw-semibold" style={{ fontSize: '1rem' }}>
                   <BoxArrowRight className="me-2" /> Logout
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
-          ) : (
-            // --- LOGGED OUT STATE ---
-            //    UPDATE: Hide button if on ANY login-related page
-            !['/login', '/staff-access'].includes(location.pathname) && (
-              <Link to="/login">
-                <Button 
-                  variant="dark" 
-                  className="px-4 py-2 rounded-pill fw-semibold shadow-sm"
-                  style={{ fontSize: '0.9rem' }}
-                >
-                  Login
-                </Button>
-              </Link>
-            )
           )}
         </div>
 

@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://couponmess.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Helper to handle headers and errors
 const request = async (endpoint: string, options: RequestInit = {}, retries = 2) => {
