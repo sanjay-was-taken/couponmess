@@ -66,7 +66,7 @@ const StaffLoginPage: React.FC = () => {
           <div className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: 60, height: 60 }}>
             <ShieldLock size={30} />
           </div>
-          <h4 className="fw-bold">Klee Staff Access</h4>
+          <h4 className="fw-bold">FeastOn Staff Access</h4>
           <p className="text-muted">Authorized personnel only</p>
         </div>
 
