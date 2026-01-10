@@ -45,7 +45,7 @@ const LoginPage: React.FC = () => {
             style={{ width: '80px', height: 'auto' }} 
             className="mb-3"
           />
-          <h4 className="fw-bold">Klee</h4>
+          <h4 className="fw-bold">FeastOn</h4>
           <p className="text-muted">Sign in with your IIIT Kottayam account</p>
         </div>
 
