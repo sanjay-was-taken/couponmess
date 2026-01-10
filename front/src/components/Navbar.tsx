@@ -42,7 +42,7 @@ const AppNavbar: React.FC = () => {
             style={{ height: '35px', width: 'auto' }} 
             className="me-2"
           />
-          <span style={{ letterSpacing: '-0.5px', fontSize: '1.2rem' }}>Klee</span>
+          <span style={{ letterSpacing: '-0.5px', fontSize: '1.2rem' }}>FeastOn</span>
         </Navbar.Brand>
         
         {/* RIGHT SIDE CONTENT */}
