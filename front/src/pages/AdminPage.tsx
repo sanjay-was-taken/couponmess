@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Form, Button, Row, Col, Alert, Spinner, Table, Badge } from 'react-bootstrap';
 import { PlusCircle, Trash, PencilSquare, Lock, Unlock, BarChartFill, PersonBadge } from 'react-bootstrap-icons';
-import colors from '../assets/constants/colors';
 import EventStatsModal from '../components/EventStatsModal';
 import { eventsApi } from '../services/api';
 import VolunteerManagerModal from '../components/VolunteerManagerModal';
-
+import { useTheme } from '../context/ThemeContext';
 
 interface FloorConfig {
   id: number;
@@ -25,6 +24,8 @@ interface EventData {
 }
 
 const AdminPage: React.FC = () => {
+  const { colors } = useTheme(); 
+
   // --- Form State ---
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
@@ -42,11 +43,9 @@ const AdminPage: React.FC = () => {
   const [message, setMessage] = useState<{type: 'success'|'danger'|'warning', text: string} | null>(null);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
 
-  // --- Stats Modal State ---
+  // --- Modal States ---
   const [showStats, setShowStats] = useState(false);
   const [selectedEventForStats, setSelectedEventForStats] = useState<{id: number, name: string} | null>(null);
-
-  // --- Volunteer Modal State ---
   const [showVolModal, setShowVolModal] = useState(false);
   const [selectedEventForVol, setSelectedEventForVol] = useState<{id: number, name: string} | null>(null);
 
@@ -252,11 +251,34 @@ const AdminPage: React.FC = () => {
     setShowVolModal(true);
   };
 
+  // Check if any modal is currently open
+  const isModalOpen = showStats || showVolModal;
+
   return (
-    <Container className="py-4">
+    <Container 
+        className="py-4" 
+        style={{ 
+            backgroundColor: colors.ui.background, 
+            minHeight: '100vh', 
+            color: colors.text.primary,
+            // Dynamic Blur Effect for Background
+            filter: isModalOpen ? 'blur(5px)' : 'none',
+            transition: 'filter 0.3s ease'
+        }}
+    >
+      
+      <style>
+        {`
+          .custom-placeholder::placeholder {
+            color: ${colors.text.secondary} !important;
+            opacity: 0.7;
+          }
+        `}
+      </style>
+
       {/* --- Header --- */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="fw-bold mb-0">{editingEventId ? 'Edit Event' : 'Create New Mess Event'}</h2>
+        <h2 className="fw-bold mb-0" style={{ color: colors.text.primary }}>{editingEventId ? 'Edit Event' : 'Create New Mess Event'}</h2>
         {editingEventId && <Button variant="outline-secondary" onClick={handleCancelEdit}>Cancel Edit</Button>}
       </div>
       
@@ -264,9 +286,9 @@ const AdminPage: React.FC = () => {
 
       {/* --- FORM SECTION --- */}
       <Form onSubmit={handleSubmit}>
-        <Card className="mb-4 shadow-sm border-0">
-          <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
-            <span>Event Details</span>
+        <Card className="mb-4 shadow-sm" style={{ backgroundColor: colors.ui.card, border: `1px solid ${colors.ui.border}` }}>
+          <Card.Header className="py-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: colors.ui.card, borderBottom: `1px solid ${colors.ui.border}` }}>
+            <span className="fw-bold" style={{ color: colors.text.primary }}>Event Details</span>
             {editingEventId && (
                 <Button 
                     size="sm" 
@@ -292,7 +314,7 @@ const AdminPage: React.FC = () => {
             <Row className="mb-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Event Name</Form.Label>
+                  <Form.Label style={{ color: colors.text.secondary }}>Event Name</Form.Label>
                   <Form.Control 
                     type="text" 
                     required 
@@ -300,44 +322,64 @@ const AdminPage: React.FC = () => {
                     onChange={e => setEventName(e.target.value)} 
                     min={getTodayIST()} 
                     placeholder="e.g. Christmas Dinner"
+                    className="custom-placeholder" 
+                    style={{ backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}
                   />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Date</Form.Label>
+                  <Form.Label style={{ color: colors.text.secondary }}>Date</Form.Label>
                   <Form.Control 
                     type="date" 
                     required 
                     value={eventDate} 
                     onChange={e => setEventDate(e.target.value)} 
                     placeholder="Select Date"
+                    className="custom-placeholder" 
+                    style={{ backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}
                   />
                 </Form.Group>
               </Col>
             </Row>
             <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
+              <Form.Label style={{ color: colors.text.secondary }}>Description</Form.Label>
               <Form.Control 
                 as="textarea" 
                 rows={2} 
                 value={description} 
                 onChange={e => setDescription(e.target.value)} 
                 placeholder="Enter event details here..."
+                className="custom-placeholder" 
+                style={{ backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}
               />
             </Form.Group>
             
             <Row>
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label>Start Time</Form.Label>
-                    <Form.Control type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required />
+                    <Form.Label style={{ color: colors.text.secondary }}>Start Time</Form.Label>
+                    <Form.Control 
+                        type="time" 
+                        value={startTime} 
+                        onChange={e => setStartTime(e.target.value)} 
+                        required 
+                        className="custom-placeholder" 
+                        style={{ backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}
+                    />
                   </Form.Group>
                 </Col>
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label>End Time</Form.Label>
-                    <Form.Control type="time" value={endTime} onChange={e => setEndTime(e.target.value)} required />
+                    <Form.Label style={{ color: colors.text.secondary }}>End Time</Form.Label>
+                    <Form.Control 
+                        type="time" 
+                        value={endTime} 
+                        onChange={e => setEndTime(e.target.value)} 
+                        required 
+                        className="custom-placeholder" 
+                        style={{ backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}
+                    />
                   </Form.Group>
                 </Col>
             </Row>
@@ -345,9 +387,9 @@ const AdminPage: React.FC = () => {
         </Card>
 
         {!editingEventId && (
-          <Card className="mb-4 shadow-sm border-0">
-            <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
-              <span>Floor and Hostel Configuration</span>
+          <Card className="mb-4 shadow-sm" style={{ backgroundColor: colors.ui.card, border: `1px solid ${colors.ui.border}` }}>
+            <Card.Header className="py-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: colors.ui.card, borderBottom: `1px solid ${colors.ui.border}` }}>
+              <span className="fw-bold" style={{ color: colors.text.primary }}>Floor and Hostel Configuration</span>
               <Button variant="outline-primary" size="sm" onClick={addFloor}>
                 <PlusCircle className="me-1"/> Add Mess
               </Button>
@@ -355,18 +397,18 @@ const AdminPage: React.FC = () => {
             <Card.Body className="p-0">
               <div className="table-responsive">
                 <Table className="mb-0">
-                  <thead className="bg-light">
+                  <thead style={{ backgroundColor: colors.ui.background }}>
                     <tr>
-                      <th className="fw-bold text-muted small" style={{ minWidth: '150px' }}>FLOOR NAME / HOSTEL NAME</th>
-                      <th className="fw-bold text-muted small text-center">COUNTERS</th>
-                      <th className="fw-bold text-muted small text-center">CAPACITY</th>
-                      <th className="fw-bold text-muted small text-center" style={{ minWidth: '80px' }}>ACTION</th>
+                      <th className="fw-bold small" style={{ minWidth: '150px', color: colors.text.secondary, backgroundColor: colors.ui.background }}>FLOOR NAME / HOSTEL NAME</th>
+                      <th className="fw-bold small text-center" style={{ color: colors.text.secondary, backgroundColor: colors.ui.background }}>COUNTERS</th>
+                      <th className="fw-bold small text-center" style={{ color: colors.text.secondary, backgroundColor: colors.ui.background }}>CAPACITY</th>
+                      <th className="fw-bold small text-center" style={{ minWidth: '80px', color: colors.text.secondary, backgroundColor: colors.ui.background }}>ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
                     {floors.map((floor, index) => (
                       <tr key={floor.id}>
-                        <td className="align-middle">
+                        <td className="align-middle" style={{ backgroundColor: colors.ui.card }}>
                           <Form.Control 
                             type="text" 
                             value={floor.floorName} 
@@ -374,11 +416,12 @@ const AdminPage: React.FC = () => {
                             placeholder={`Mess ${index + 1}`}
                             required 
                             size="sm"
-                            style={{ minWidth: '140px' }}
+                            className="custom-placeholder" 
+                            style={{ minWidth: '140px', backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}
                           />
                         </td>
 
-                        <td className="align-middle text-center">
+                        <td className="align-middle text-center" style={{ backgroundColor: colors.ui.card }}>
                           <Form.Control 
                             type="number" 
                             min={1} 
@@ -386,10 +429,11 @@ const AdminPage: React.FC = () => {
                             onChange={(e) => updateFloor(floor.id, 'counterCount', parseInt(e.target.value))} 
                             size="sm"
                             placeholder="e.g. 2"
-                            style={{ width: '80px', margin: '0 auto' }}
+                            className="custom-placeholder" 
+                            style={{ width: '80px', margin: '0 auto', backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}
                           />
                         </td>
-                        <td className="align-middle text-center">
+                        <td className="align-middle text-center" style={{ backgroundColor: colors.ui.card }}>
                           <Form.Control 
                             type="number" 
                             min={1} 
@@ -397,10 +441,11 @@ const AdminPage: React.FC = () => {
                             onChange={(e) => updateFloor(floor.id, 'capacityPerCounter', parseInt(e.target.value))} 
                             size="sm"
                             placeholder="e.g. 50"
-                            style={{ width: '80px', margin: '0 auto' }}
+                            className="custom-placeholder" 
+                            style={{ width: '80px', margin: '0 auto', backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}
                           />
                         </td>
-                        <td className="align-middle text-center" style={{ minWidth: '80px' }}>
+                        <td className="align-middle text-center" style={{ minWidth: '80px', backgroundColor: colors.ui.card }}>
                         {floors.length > 1 ? (
                           <Button 
                             variant="outline-danger" 
@@ -422,52 +467,53 @@ const AdminPage: React.FC = () => {
           </Card>
         )}
 
-        <Button variant={editingEventId ? "warning" : "success"} size="lg" type="submit" className="w-100 mb-5" disabled={loading} style={!editingEventId ? { backgroundColor: colors.primary.main } : {}}>
+        <Button variant={editingEventId ? "warning" : "success"} size="lg" type="submit" className="w-100 mb-5" disabled={loading} style={!editingEventId ? { backgroundColor: colors.primary.main, borderColor: colors.primary.main } : {}}>
           {loading ? <Spinner animation="border" size="sm" /> : (editingEventId ? 'Update Event' : 'Create Event')}
         </Button>
       </Form>
 
       {/* --- TABLE SECTION --- */}
-      <h3 className="mb-3 fw-bold mt-5 border-top pt-4">Manage Existing Events</h3>
+      <h3 className="mb-3 fw-bold mt-5 border-top pt-4" style={{ color: colors.text.primary, borderColor: colors.ui.border }}>Manage Existing Events</h3>
       {fetching ? <div className="text-center p-5"><Spinner animation="border" variant="success" /></div> : 
        events.length === 0 ? <Alert variant="info">No events found.</Alert> : (
-        <Card className="shadow-sm border-0">
+        <Card className="shadow-sm" style={{ backgroundColor: colors.ui.card, border: `1px solid ${colors.ui.border}` }}>
           <Table responsive hover className="mb-0 align-middle">
-            <thead className="bg-light">
+            <thead style={{ backgroundColor: colors.ui.background }}>
               <tr>
-                <th>Event Name</th>
-                <th>Date</th>
-                <th>Time Slot</th>
-                <th>Status</th>
-                <th className="text-end">Actions</th>
+                <th style={{ backgroundColor: colors.ui.background, color: colors.text.secondary }}>Event Name</th>
+                <th style={{ backgroundColor: colors.ui.background, color: colors.text.secondary }}>Date</th>
+                <th style={{ backgroundColor: colors.ui.background, color: colors.text.secondary }}>Time Slot</th>
+                <th style={{ backgroundColor: colors.ui.background, color: colors.text.secondary }}>Status</th>
+                <th className="text-end" style={{ backgroundColor: colors.ui.background, color: colors.text.secondary }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {events.map(event => {
                 return (
                   <tr key={event.event_id}>
-                    <td>
+                    <td style={{ backgroundColor: colors.ui.card }}>
                       <div 
-                          className="fw-bold text-primary" 
-                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                          className="fw-bold" 
+                          style={{ cursor: 'pointer', textDecoration: 'underline', color: colors.primary.main }}
                           onClick={() => openStats(event)}
                           title="Click to view stats"
                       >
                           {event.name} <BarChartFill className="ms-1" size={14}/>
                       </div>
-                      <small className="text-muted">{event.description}</small>
+                      <small style={{ color: colors.text.secondary }}>{event.description}</small>
                     </td>
-                    <td>{formatDate(event.date)}</td>
-                    <td><span className="text-muted small fw-bold">{formatTime(event.time_start)} - {formatTime(event.time_end)}</span></td>
-                    <td>{getStatusBadge(event)}</td>
+                    <td style={{ backgroundColor: colors.ui.card, color: colors.text.primary }}>{formatDate(event.date)}</td>
+                    <td style={{ backgroundColor: colors.ui.card }}><span className="small fw-bold" style={{ color: colors.text.secondary }}>{formatTime(event.time_start)} - {formatTime(event.time_end)}</span></td>
+                    <td style={{ backgroundColor: colors.ui.card }}>{getStatusBadge(event)}</td>
                     
-                    <td className="text-end">
+                    <td className="text-end" style={{ backgroundColor: colors.ui.card }}>
                       <div className="d-flex flex-column flex-md-row gap-2 justify-content-md-end align-items-stretch">
                         <Button 
                           variant="outline-dark" 
                           size="sm" 
                           title="Manage Staff"
                           onClick={() => handleManageVolunteers(event)}
+                          style={{ color: colors.text.primary, borderColor: colors.ui.border }}
                         >
                           <PersonBadge /> Staff
                         </Button>
@@ -500,7 +546,7 @@ const AdminPage: React.FC = () => {
         show={showVolModal}
         onHide={() => setShowVolModal(false)}
         eventId={selectedEventForVol?.id || null}
-        eventName={selectedEventForVol?.name || ''}
+        eventName={selectedEventForVol?.name || ''} 
       />
     </Container>
   );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from 'react-bootstrap';
 import { QrCodeScan, CheckCircleFill } from 'react-bootstrap-icons';
-import colors from '../../assets/constants/colors'; 
+import { useTheme } from '../../context/ThemeContext'; // 1. Import Theme Hook
 
 interface QrButtonProps {
   text: string;
@@ -11,6 +11,7 @@ interface QrButtonProps {
 }
 
 const QrButton: React.FC<QrButtonProps> = ({ text, onClick, variant = 'get', disabled = false }) => {
+  const { colors } = useTheme(); // 2. Get dynamic colors
   
   // Define styles for each state
   const getButtonStyle = () => {
@@ -18,21 +19,21 @@ const QrButton: React.FC<QrButtonProps> = ({ text, onClick, variant = 'get', dis
       case 'get':
       case 'show':
         return {
-          backgroundColor: colors.primary.main, // Same light green as before
-          border: 'none',
-          color: 'white'
+          backgroundColor: colors.primary.main, 
+          border: `1px solid ${colors.primary.main}`,
+          color: colors.primary.text // Ensures text is readable (White)
         };
       case 'claimed':
         return {
-          backgroundColor: '#ffffffff', // Light gray background
-          border: '1px solid #2b8c46ff', // Subtle border
-          color: '#37931bff' // Professional gray text
+          backgroundColor: colors.ui.card, // Blends with the card background in Dark/Light mode
+          border: `1px solid ${colors.success.main}`, // Green Border
+          color: colors.success.main // Green Text
         };
       default:
         return {
           backgroundColor: colors.primary.main,
           border: 'none',
-          color: 'white'
+          color: colors.primary.text
         };
     }
   };
@@ -46,10 +47,10 @@ const QrButton: React.FC<QrButtonProps> = ({ text, onClick, variant = 'get', dis
 
   return (
     <Button
-      variant="success"
+      variant="success" // Keep base variant for shape/padding defaults
       size="lg"
       className="w-100 d-flex align-items-center justify-content-center"
-      style={getButtonStyle()}
+      style={getButtonStyle()} // Override colors dynamically
       onClick={onClick}
       disabled={disabled}
     >

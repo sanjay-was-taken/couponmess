@@ -5,10 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Container, Card } from 'react-bootstrap';
 import { authApi } from '../services/api';
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
+  const { colors } = useTheme(); // 2. Get dynamic colors
   const navigate = useNavigate();
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
@@ -34,8 +36,23 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
-      <Card style={{ maxWidth: 480, width: "100%", padding: 32, border: "none", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
+    <Container 
+      className="d-flex align-items-center justify-content-center" 
+      style={{ 
+        minHeight: "100vh", 
+        backgroundColor: colors.ui.background // 3. Dynamic Page Background
+      }}
+    >
+      <Card 
+        style={{ 
+          maxWidth: 480, 
+          width: "100%", 
+          padding: 32, 
+          border: `1px solid ${colors.ui.border}`, // 4. Dynamic Border
+          boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+          backgroundColor: colors.ui.card // 5. Dynamic Card Background
+        }}
+      >
         
         {/* Header Section with Logo and Name */}
         <div className="text-center mb-4">
@@ -45,8 +62,8 @@ const LoginPage: React.FC = () => {
             style={{ width: '80px', height: 'auto' }} 
             className="mb-3"
           />
-          <h4 className="fw-bold">FeastOn</h4>
-          <p className="text-muted">Sign in with your IIIT Kottayam account</p>
+          <h4 className="fw-bold" style={{ color: colors.text.primary }}>FeastOn</h4>
+          <p style={{ color: colors.text.secondary }}>Sign in with your IIIT Kottayam account</p>
         </div>
 
         {/* Google Login Button */}
@@ -57,22 +74,32 @@ const LoginPage: React.FC = () => {
             useOneTap
             shape="rectangular"
             width="100%"
+            // theme="filled_blue" // Optional: Google button has its own internal theme prop
           />
         </div>
 
         {/* Error Message Display */}
         {error && (
-          <div className="text-danger text-center small mb-3">{error}</div>
+          <div className="text-center small mb-3" style={{ color: colors.error.main }}>{error}</div>
         )}
 
         {/* Footer Info */}
-        <div className="text-center" style={{ fontSize: 12, color: "#888" }}>
-          Only <strong>@iiitkottayam.ac.in</strong> accounts are allowed
+        <div className="text-center" style={{ fontSize: 12, color: colors.text.disabled }}>
+          Only <strong style={{ color: colors.text.secondary }}>@iiitkottayam.ac.in</strong> accounts are allowed
         </div>
         
         {/* Hidden Staff Link (Bottom Dot) */}
         <div className="mt-5 text-center">
-            <a href="/staff-access" style={{ fontSize: '10px', color: '#eee', textDecoration: 'none' }}>.</a>
+            <a 
+              href="/staff-access" 
+              style={{ 
+                fontSize: '10px', 
+                color: colors.ui.border, // Barely visible in both modes
+                textDecoration: 'none' 
+              }}
+            >
+              .
+            </a>
         </div>
 
       </Card>

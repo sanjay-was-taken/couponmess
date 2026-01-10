@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Table, Alert, InputGroup, Badge, Toast, ToastContainer } from 'react-bootstrap';
 import { PersonPlusFill, Trash, Clipboard, Check } from 'react-bootstrap-icons';
 import { eventsApi } from '../services/api';
+import { useTheme } from '../context/ThemeContext'; 
 
 interface VolunteerManagerModalProps {
   show: boolean;
@@ -18,6 +19,7 @@ interface Volunteer {
 }
 
 const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onHide, eventId, eventName }) => {
+  const { colors, mode } = useTheme(); // Get mode for conditional CSS
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -126,17 +128,55 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
     }
   };
 
+  // Define common input styles for dark mode compatibility
+  const inputStyle = {
+    backgroundColor: colors.ui.background,
+    color: colors.text.primary,
+    borderColor: colors.ui.border
+  };
+
   return (
     <>
-      <Modal show={show} onHide={onHide} size="lg" centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Manage Staff: <span className="text-primary">{eventName}</span></Modal.Title>
+      {/* 1. FIX PLACEHOLDERS: Inject dynamic CSS for inputs with class 'custom-placeholder'
+          2. FIX CLOSE BUTTON: Invert colors for .btn-close in dark mode
+      */}
+      <style>
+        {`
+          .custom-placeholder::placeholder {
+            color: ${colors.text.secondary} !important;
+            opacity: 0.7;
+          }
+          ${mode === 'dark' ? `
+            .volunteer-modal-custom .btn-close {
+              filter: invert(1) grayscale(100%) brightness(200%);
+              opacity: 1;
+            }
+          ` : ''}
+        `}
+      </style>
+
+      <Modal 
+        show={show} 
+        onHide={onHide} 
+        size="lg" 
+        centered
+        className="volunteer-modal-custom" // Apply custom class for targeting close button
+      >
+        <Modal.Header 
+            closeButton 
+            style={{ 
+                backgroundColor: colors.ui.card, 
+                color: colors.text.primary, 
+                borderBottom: `1px solid ${colors.ui.border}` 
+            }}
+        >
+          <Modal.Title>Manage Staff: <span style={{ color: colors.primary.main }}>{eventName}</span></Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ backgroundColor: colors.ui.background }}>
           
           {/* CREATION FORM */}
-          <div className="bg-light p-3 rounded mb-4 border">
-              <h6 className="fw-bold mb-3"><PersonPlusFill className="me-2"/> Add New Volunteer</h6>
+          <div className="p-3 rounded mb-4" style={{ backgroundColor: colors.ui.card, border: `1px solid ${colors.ui.border}` }}>
+              <h6 className="fw-bold mb-3" style={{ color: colors.text.primary }}><PersonPlusFill className="me-2"/> Add New Volunteer</h6>
               <Form onSubmit={handleCreate}>
                   <div className="row g-2">
                       <div className="col-md-4">
@@ -145,16 +185,20 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
                               value={newName} 
                               onChange={e => setNewName(e.target.value)} 
                               required 
+                              style={inputStyle}
+                              className="custom-placeholder" // Applied Placeholder Fix
                           />
                       </div>
                       <div className="col-md-3">
                           <InputGroup>
-                              <InputGroup.Text className="bg-white text-muted">@</InputGroup.Text>
+                              <InputGroup.Text style={{ backgroundColor: colors.ui.background, color: colors.text.secondary, borderColor: colors.ui.border }}>@</InputGroup.Text>
                               <Form.Control 
                                   placeholder="Username" 
                                   value={newUsername} 
                                   onChange={e => setNewUsername(e.target.value)} 
                                   required 
+                                  style={inputStyle}
+                                  className="custom-placeholder" // Applied Placeholder Fix
                               />
                           </InputGroup>
                       </div>
@@ -164,13 +208,22 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
                                   value={newPassword} 
                                   onChange={e => setNewPassword(e.target.value)} 
                                   required 
-                              />
+                                  style={inputStyle}
+                                  className="custom-placeholder" // Applied Placeholder Fix
+                            />
                       </div>
                       <div className="col-md-2">
-                          <Button variant="success" type="submit" className="w-100">Add</Button>
+                          <Button 
+                            variant="success" 
+                            type="submit" 
+                            className="w-100"
+                            style={{ backgroundColor: colors.primary.main, borderColor: colors.primary.main }}
+                          >
+                            Add
+                          </Button>
                       </div>
                   </div>
-                  <Form.Text className="text-muted small">
+                  <Form.Text className="small" style={{ color: colors.text.secondary }}>
                      Username and password are auto-generated for ease, but you can edit them.
                   </Form.Text>
               </Form>
@@ -178,80 +231,102 @@ const VolunteerManagerModal: React.FC<VolunteerManagerModalProps> = ({ show, onH
 
           {/* CREDENTIALS ALERT */}
           {createdCreds && (
-              <Alert variant="success" className="d-flex justify-content-between align-items-center">
+              <Alert 
+                className="d-flex justify-content-between align-items-center"
+                style={{ 
+                    backgroundColor: colors.success.background, 
+                    color: colors.success.main, 
+                    borderColor: colors.success.main 
+                }}
+              >
                   <div>
                       <strong>User Created!</strong> Share details:<br/>
-                      Username: <code className="fw-bold text-dark fs-6">{createdCreds.u}</code> &nbsp;|&nbsp; 
-                      Password: <code className="fw-bold text-dark fs-6">{createdCreds.p}</code>
+                      Username: <code className="fw-bold fs-6" style={{ color: colors.text.primary }}>{createdCreds.u}</code> &nbsp;|&nbsp; 
+                      Password: <code className="fw-bold fs-6" style={{ color: colors.text.primary }}>{createdCreds.p}</code>
                   </div>
-                  <Button variant={copySuccess ? "outline-success" : "outline-dark"} size="sm" onClick={copyToClipboard}>
+                  <Button 
+                    variant="outline-success" 
+                    size="sm" 
+                    onClick={copyToClipboard}
+                    style={{ 
+                        color: copySuccess ? colors.success.main : colors.text.primary, 
+                        borderColor: colors.success.main 
+                    }}
+                  >
                       {copySuccess ? <><Check/> Copied</> : <><Clipboard/> Copy info</>}
                   </Button>
               </Alert>
           )}
 
           {/* VOLUNTEER LIST */}
-          <h6 className="fw-bold mt-4">Current Volunteers ({volunteers.length})</h6>
-          <Table hover size="sm" className="align-middle mt-2">
-              <thead className="bg-light">
-                  <tr>
-                      <th>Name</th>
-                      <th>Username</th>
-                      <th>Status</th>
-                      <th className="text-end">Action</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  {volunteers.length === 0 ? (
-                      <tr><td colSpan={4} className="text-center text-muted py-3">No volunteers assigned yet.</td></tr>
-                  ) : (
-                      volunteers.map(v => (
-                          <tr key={v.id}>
-                              <td>{v.name}</td>
-                              <td><Badge bg="light" text="dark" className="border">@{v.username}</Badge></td>
-                              <td><Badge bg="success">Active</Badge></td>
-                              <td className="text-end">
-                                  <Button 
-                                    variant="link" 
-                                    className="text-danger p-0" 
-                                    onClick={() => handleDelete(v.id, v.name)}
-                                  >
-                                      <Trash/>
-                                  </Button>
-                              </td>
-                          </tr>
-                      ))
-                  )}
-              </tbody>
-          </Table>
+          <h6 className="fw-bold mt-4" style={{ color: colors.text.primary }}>Current Volunteers ({volunteers.length})</h6>
+          <div className="table-responsive">
+            <Table hover size="sm" className="align-middle mt-2">
+                <thead style={{ backgroundColor: colors.ui.card }}>
+                    <tr>
+                        <th style={{ backgroundColor: colors.ui.card, color: colors.text.secondary }}>Name</th>
+                        <th style={{ backgroundColor: colors.ui.card, color: colors.text.secondary }}>Username</th>
+                        <th style={{ backgroundColor: colors.ui.card, color: colors.text.secondary }}>Status</th>
+                        <th className="text-end" style={{ backgroundColor: colors.ui.card, color: colors.text.secondary }}>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {volunteers.length === 0 ? (
+                        <tr><td colSpan={4} className="text-center py-3" style={{ backgroundColor: colors.ui.background, color: colors.text.secondary }}>No volunteers assigned yet.</td></tr>
+                    ) : (
+                        volunteers.map(v => (
+                            <tr key={v.id}>
+                                <td style={{ backgroundColor: colors.ui.background, color: colors.text.primary }}>{v.name}</td>
+                                <td style={{ backgroundColor: colors.ui.background }}>
+                                    <Badge bg="light" text="dark" className="border" style={{ backgroundColor: colors.ui.card, color: colors.text.primary, borderColor: colors.ui.border }}>@{v.username}</Badge>
+                                </td>
+                                <td style={{ backgroundColor: colors.ui.background }}>
+                                    <Badge bg="success" style={{ backgroundColor: colors.success.main }}>Active</Badge>
+                                </td>
+                                <td className="text-end" style={{ backgroundColor: colors.ui.background }}>
+                                    <Button 
+                                      variant="link" 
+                                      className="p-0" 
+                                      style={{ color: colors.error.main }}
+                                      onClick={() => handleDelete(v.id, v.name)}
+                                    >
+                                        <Trash/>
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))
+                    )}
+                </tbody>
+            </Table>
+          </div>
 
         </Modal.Body>
       </Modal>
 
       {/* TOAST NOTIFICATION */}
-<ToastContainer 
-  position="top-end" 
-  className="p-3" 
-  style={{ 
-    zIndex: 9999,  // Higher z-index to appear above modal
-    position: 'fixed'  // Ensure it's positioned relative to viewport
-  }}
->
-  <Toast 
-      onClose={() => setShowToast(false)} 
-      show={showToast} 
-      delay={4000} 
-      autohide 
-      bg={toastVariant}
-  >
-    <Toast.Header closeButton>
-      <strong className="me-auto">
-        {toastVariant === 'success' ? ' Success' : ' Error'}
-      </strong>
-    </Toast.Header>
-    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-  </Toast>
-</ToastContainer>
+      <ToastContainer 
+        position="top-end" 
+        className="p-3" 
+        style={{ 
+          zIndex: 9999,  
+          position: 'fixed'  
+        }}
+      >
+        <Toast 
+            onClose={() => setShowToast(false)} 
+            show={showToast} 
+            delay={4000} 
+            autohide 
+            bg={toastVariant} 
+        >
+          <Toast.Header closeButton>
+            <strong className="me-auto">
+              {toastVariant === 'success' ? ' Success' : ' Error'}
+            </strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
 
     </>
   );

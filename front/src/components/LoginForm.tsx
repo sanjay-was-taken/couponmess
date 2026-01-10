@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { GoogleLogin } from '@react-oauth/google';
-import type { CredentialResponse } from '@react-oauth/google'; // Added "type"
-
+import type { CredentialResponse } from '@react-oauth/google'; 
 import { useAuth } from '../context/AuthContext'; 
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 
 type StaffCreds = { username: string; password: string; remember?: boolean };
 
@@ -11,67 +11,6 @@ export interface LoginFormProps {
   onStudentSignIn?: () => void;
   onStaffSignIn?: (creds: StaffCreds) => Promise<void> | void;
 }
-
-const PRIMARY = "#4caf50";
-const cardStyle: React.CSSProperties = {
-  maxWidth: 480,
-  width: "100%",
-  margin: "0 auto",
-  padding: 32,
-  borderRadius: 2,
-  background: "#ffffff",
-  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-  border: "none",
-};
-
-const primaryBtnStyle: React.CSSProperties = {
-  background: PRIMARY,
-  borderColor: PRIMARY,
-  color: "#fff",
-  borderRadius: 0,
-  padding: "13px 18px",
-  fontWeight: 600,
-  fontSize: 15,
-  letterSpacing: 0.3,
-  border: "none",
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-};
-
-const tabActiveStyle: React.CSSProperties = {
-  background: PRIMARY,
-  color: "#fff",
-  border: "none",
-  borderRadius: 0,
-  padding: "11px 16px",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-};
-
-const tabInactiveStyle: React.CSSProperties = {
-  background: "#f8f9fa",
-  color: "#333",
-  border: "1px solid #e0e0e0",
-  borderRadius: 0,
-  padding: "11px 16px",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-};
-
-const inputCustomStyle: React.CSSProperties = {
-  borderRadius: 0,
-  padding: "13px 14px",
-  border: "1px solid #ddd",
-  boxShadow: "none",
-  minHeight: 46,
-  fontSize: 14,
-  fontFamily: "inherit",
-  transition: "border 0.2s ease",
-};
 
 export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
   const [mode, setMode] = useState<"student" | "staff">("student");
@@ -82,22 +21,87 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { login } = useAuth(); 
+  const { colors } = useTheme(); // 2. Get dynamic colors
   const navigate = useNavigate();
+
+  // --- Dynamic Styles ---
+  const cardStyle: React.CSSProperties = {
+    maxWidth: 480,
+    width: "100%",
+    margin: "0 auto",
+    padding: 32,
+    borderRadius: 8, // slightly rounded
+    backgroundColor: colors.ui.card, // Dynamic Card BG
+    boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+    border: `1px solid ${colors.ui.border}`, // Dynamic Border
+  };
+
+  const primaryBtnStyle: React.CSSProperties = {
+    background: colors.primary.main, // Dynamic Primary
+    borderColor: colors.primary.main,
+    color: "#fff",
+    borderRadius: 4,
+    padding: "13px 18px",
+    fontWeight: 600,
+    fontSize: 15,
+    letterSpacing: 0.3,
+    border: "none",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  };
+
+  const tabActiveStyle: React.CSSProperties = {
+    background: colors.primary.main, // Dynamic Primary
+    color: "#fff",
+    border: "none",
+    borderRadius: 4,
+    padding: "11px 16px",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  };
+
+  const tabInactiveStyle: React.CSSProperties = {
+    background: colors.ui.background, // Dynamic light/dark bg
+    color: colors.text.secondary, // Dynamic text color
+    border: `1px solid ${colors.ui.border}`,
+    borderRadius: 4,
+    padding: "11px 16px",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  };
+
+  const inputCustomStyle: React.CSSProperties = {
+    borderRadius: 4,
+    padding: "13px 14px",
+    border: `1px solid ${colors.ui.border}`,
+    backgroundColor: colors.ui.background, // Dynamic Input BG
+    color: colors.text.primary, // Dynamic Input Text
+    boxShadow: "none",
+    minHeight: 46,
+    fontSize: 14,
+    fontFamily: "inherit",
+    transition: "border 0.2s ease",
+    width: "100%",
+    boxSizing: 'border-box'
+  };
+
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
-      // 1. Get the ID Token from Google
       const { credential } = credentialResponse;
-      
       if (!credential) {
         setError("Google Login failed. No credential received.");
         return;
       }
 
-      // 2. Send it to YOUR Backend
+      // API Call (Assuming this matches your backend)
       const res = await fetch('http://localhost:3000/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: credential }), // Matches backend req.body.token
+        body: JSON.stringify({ token: credential }), 
       });
 
       const data = await res.json();
@@ -106,11 +110,8 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
         throw new Error(data.error || "Login failed on server");
       }
 
-      // 3. Login Successful! Save to Context
-      // Backend returns: { token: "jwt...", user: { ... } }
       login(data.token, data.user);
 
-      // 4. Redirect based on role
       if (data.user.role === 'admin') navigate('/admin');
       else navigate('/dashboard');
 
@@ -119,6 +120,7 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
       setError(err.message);
     }
   };
+
   const handleGoogleError = () => {
     setError("Google Login Failed. Please try again.");
   };
@@ -133,8 +135,6 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
     
     try {
       setLoading(true);
-      
-      // 1. Call the new Backend Endpoint
       const res = await fetch("http://localhost:3000/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -145,10 +145,8 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
 
       if (!res.ok) throw new Error(data.error || "Invalid credentials");
 
-      // 2. Login using Context
       login(data.token, data.user);
 
-      // 3. Redirect based on Role
       if (data.user.role === 'admin') navigate('/admin');
       else navigate('/staff');
 
@@ -166,7 +164,7 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
         style={{
           textAlign: "center",
           marginBottom: 20,
-          color: "#222",
+          color: colors.text.primary, // Dynamic Title Color
           fontSize: 22,
           fontWeight: 600,
           letterSpacing: -0.2,
@@ -202,7 +200,7 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
           <p
             style={{
               marginBottom: 14,
-              color: "#666",
+              color: colors.text.secondary, // Dynamic Subtext
               fontSize: 13,
               lineHeight: 1.5,
             }}
@@ -214,13 +212,12 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
               useOneTap
-              //theme="filled_green" // Tries to match your green theme
               shape="rectangular"
               width="100%"
             />
           </div>
           {error && (
-            <div style={{ color: "red", fontSize: 13, marginBottom: 10, textAlign: 'center' }}>
+            <div style={{ color: colors.error.main, fontSize: 13, marginBottom: 10, textAlign: 'center' }}>
               {error}
             </div>
           )}
@@ -228,11 +225,11 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
             style={{
               textAlign: "center",
               fontSize: 12,
-              color: "#888",
+              color: colors.text.disabled, // Dynamic Disabled Text
               lineHeight: 1.5,
             }}
           >
-            Only <strong>@iiitkottayam.ac.in</strong> accounts are allowed
+            Only <strong style={{ color: colors.text.secondary }}>@iiitkottayam.ac.in</strong> accounts are allowed
           </div>
         </div>
       ) : (
@@ -274,11 +271,11 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
               />
-              <label htmlFor="remember" style={{ fontSize: 13, color: "#444" }}>
+              <label htmlFor="remember" style={{ fontSize: 13, color: colors.text.secondary }}>
                 Remember me
               </label>
             </div>
-            <a href="#" style={{ fontSize: 13, color: PRIMARY }}>
+            <a href="#" style={{ fontSize: 13, color: colors.primary.main, textDecoration: 'none' }}>
               Forgot password?
             </a>
           </div>
@@ -286,10 +283,10 @@ export default function LoginForm({ onStaffSignIn }: LoginFormProps) {
           {error && (
             <div
               style={{
-                background: "#ffebee",
-                color: "#c62828",
+                background: colors.error.background,
+                color: colors.error.main,
                 padding: "10px 12px",
-                borderRadius: 0,
+                borderRadius: 4,
                 marginBottom: 14,
                 fontSize: 13,
                 fontWeight: 500,

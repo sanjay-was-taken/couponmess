@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Spinner, Alert } from 'react-bootstrap';
 import { eventsApi } from '../services/api';
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 
 interface VolunteerAssignmentModalProps {
   show: boolean;
@@ -22,6 +23,7 @@ const VolunteerAssignmentModal: React.FC<VolunteerAssignmentModalProps> = ({
   eventId, 
   volunteerName 
 }) => {
+  const { colors } = useTheme(); // 2. Get dynamic colors
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedFloor, setSelectedFloor] = useState('');
   const [selectedCounter, setSelectedCounter] = useState('');
@@ -82,28 +84,36 @@ const VolunteerAssignmentModal: React.FC<VolunteerAssignmentModalProps> = ({
     .map(slot => slot.counter)
     .sort();
 
+  // Common style for form inputs
+  const inputStyle = {
+    backgroundColor: colors.ui.background,
+    color: colors.text.primary,
+    borderColor: colors.ui.border
+  };
+
   return (
     <Modal show={show} backdrop="static" keyboard={false} centered>
-      <Modal.Header className="bg-primary text-white">
+      <Modal.Header style={{ backgroundColor: colors.primary.main, color: '#fff' }}>
         <Modal.Title>Choose Your Position</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      
+      <Modal.Body style={{ backgroundColor: colors.ui.card }}>
         <div className="text-center mb-4">
-          <h5>Welcome, {volunteerName}!</h5>
-          <p className="text-muted">Please select your Mess for this session.</p>
+          <h5 style={{ color: colors.text.primary }}>Welcome, {volunteerName}!</h5>
+          <p style={{ color: colors.text.secondary }}>Please select your Mess for this session.</p>
         </div>
 
         {error && <Alert variant="danger">{error}</Alert>}
 
         {loading ? (
           <div className="text-center py-4">
-            <Spinner animation="border" variant="primary" />
-            <p className="mt-2">Loading available positions...</p>
+            <Spinner animation="border" style={{ color: colors.primary.main }} />
+            <p className="mt-2" style={{ color: colors.text.secondary }}>Loading available positions...</p>
           </div>
         ) : (
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Mess</Form.Label>
+              <Form.Label style={{ color: colors.text.primary }}>Mess</Form.Label>
               <Form.Select 
                 value={selectedFloor} 
                 onChange={(e) => {
@@ -111,6 +121,7 @@ const VolunteerAssignmentModal: React.FC<VolunteerAssignmentModalProps> = ({
                   setSelectedCounter(''); // Reset counter when floor changes
                 }}
                 required
+                style={inputStyle}
               >
                 <option value="">Select Floor / Hostel</option>
                 {uniqueFloors.map(floor => (
@@ -120,12 +131,13 @@ const VolunteerAssignmentModal: React.FC<VolunteerAssignmentModalProps> = ({
             </Form.Group>
 
             <Form.Group className="mb-4">
-              <Form.Label>Counter</Form.Label>
+              <Form.Label style={{ color: colors.text.primary }}>Counter</Form.Label>
               <Form.Select 
                 value={selectedCounter} 
                 onChange={(e) => setSelectedCounter(e.target.value)}
                 disabled={!selectedFloor}
                 required
+                style={inputStyle}
               >
                 <option value="">Select Counter</option>
                 {availableCounters.map(counter => (
@@ -135,10 +147,13 @@ const VolunteerAssignmentModal: React.FC<VolunteerAssignmentModalProps> = ({
             </Form.Group>
 
             <Button 
-              variant="primary" 
               type="submit" 
               className="w-100"
               disabled={submitting || !selectedFloor || !selectedCounter}
+              style={{ 
+                backgroundColor: colors.primary.main, 
+                borderColor: colors.primary.main 
+              }}
             >
               {submitting ? (
                 <>

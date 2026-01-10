@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Button, Card, Row, Col, Table, ProgressBar, Spinner, Alert, Badge } from 'react-bootstrap';
 import { BarChartFill, PeopleFill, Shop, ClockHistory, ChevronLeft, ChevronRight } from 'react-bootstrap-icons'; 
 import { eventsApi } from '../services/api';
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 
 interface EventStatsModalProps {
   show: boolean;
@@ -27,8 +28,9 @@ interface ScanLog {
 const ITEMS_PER_PAGE = 50;
 
 const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId, eventName }) => {
+  const { colors } = useTheme(); // 2. Get dynamic colors
   const [loading, setLoading] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(false); // Separate loading for table
+  const [historyLoading, setHistoryLoading] = useState(false); 
   const [stats, setStats] = useState<EventStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   
@@ -40,9 +42,9 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
   // 1. Reset on open
   useEffect(() => {
     if (show && eventId) {
-      setPage(1); // Reset to first page
+      setPage(1); 
       fetchOverallStats();
-      fetchHistory(1); // Fetch page 1
+      fetchHistory(1); 
     }
   }, [show, eventId]);
 
@@ -71,7 +73,7 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
       const data = await eventsApi.getScanHistory(eventId, ITEMS_PER_PAGE, offset);
       
       setScanHistory(data.scanHistory || []);
-      setHasMore(data.hasMore); // Backend tells us if there are more records
+      setHasMore(data.hasMore); 
     } catch (err) {
       console.error("Failed to load history", err);
     } finally {
@@ -111,52 +113,54 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton className="bg-success text-white">
+      <Modal.Header closeButton style={{ backgroundColor: colors.primary.main, color: '#fff' }}>
         <Modal.Title className="d-flex align-items-center">
           <BarChartFill className="me-2" />
           Analytics: {eventName}
         </Modal.Title>
       </Modal.Header>
-      <Modal.Body className="bg-light p-4">
+      
+      <Modal.Body style={{ backgroundColor: colors.ui.background }}>
         {loading ? (
           <div className="text-center p-5">
-            <Spinner animation="border" variant="success" />
-            <p className="mt-2 text-muted">Loading Analytics...</p>
+            <Spinner animation="border" style={{ color: colors.primary.main }} />
+            <p className="mt-2" style={{ color: colors.text.secondary }}>Loading Analytics...</p>
           </div>
         ) : error ? (
           <Alert variant="danger">{error}</Alert>
         ) : stats ? (
           <div>
             {/* 1. Total Served Card */}
-            <Card className="mb-4 text-center border-0 shadow-sm">
+            <Card className="mb-4 text-center border-0 shadow-sm" style={{ backgroundColor: colors.ui.card }}>
               <Card.Body className="py-4">
-                <h6 className="text-muted text-uppercase fw-bold mb-2" style={{ letterSpacing: '1px' }}>Total Students Served</h6>
-                <h1 className="display-3 fw-bold text-success mb-0">{stats.total}</h1>
+                <h6 className="text-uppercase fw-bold mb-2" style={{ color: colors.text.secondary, letterSpacing: '1px' }}>Total Students Served</h6>
+                <h1 className="display-3 fw-bold mb-0" style={{ color: colors.success.main }}>{stats.total}</h1>
               </Card.Body>
             </Card>
 
             <Row className="g-4">
               {/* 2. Breakdown by Batch */}
               <Col md={6}>
-                <Card className="h-100 border-0 shadow-sm">
-                  <Card.Header className="bg-white fw-bold py-3 border-bottom-0">
-                    <PeopleFill className="me-2 text-primary" />
-                    By Batch (Year)
+                <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: colors.ui.card }}>
+                  <Card.Header className="py-3 border-bottom-0" style={{ backgroundColor: colors.ui.card, color: colors.text.primary }}>
+                    <PeopleFill className="me-2" style={{ color: colors.primary.main }} />
+                    <span className="fw-bold">By Batch (Year)</span>
                   </Card.Header>
                   <Card.Body>
                     {stats.byBatch.length === 0 ? (
-                      <p className="text-muted small text-center my-4">No data yet.</p>
+                      <p className="small text-center my-4" style={{ color: colors.text.secondary }}>No data yet.</p>
                     ) : (
                       stats.byBatch.map((item, idx) => {
                         const percent = stats.total > 0 ? (parseInt(item.count) / stats.total) * 100 : 0;
                         return (
                           <div key={idx} className="mb-3">
-                            <div className="d-flex justify-content-between small fw-bold mb-1">
+                            <div className="d-flex justify-content-between small fw-bold mb-1" style={{ color: colors.text.primary }}>
                               <span>Batch {item.batch || 'Unknown'}</span>
                               <span>{item.count}</span>
                             </div>
                             <ProgressBar 
                               now={percent} 
+                              // Use custom color if needed, or stick to bootstrap variants if they look ok
                               variant="info" 
                               style={{ height: '6px', borderRadius: '10px' }} 
                             />
@@ -170,27 +174,27 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
 
               {/* 3. Breakdown by Counter */}
               <Col md={6}>
-                <Card className="h-100 border-0 shadow-sm">
-                  <Card.Header className="bg-white fw-bold py-3 border-bottom-0">
-                    <Shop className="me-2 text-warning" />
-                    By Counter
+                <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: colors.ui.card }}>
+                  <Card.Header className="py-3 border-bottom-0" style={{ backgroundColor: colors.ui.card, color: colors.text.primary }}>
+                    <Shop className="me-2" style={{ color: colors.warning.main }} />
+                    <span className="fw-bold">By Counter</span>
                   </Card.Header>
                   <Card.Body className="p-0">
                     <Table hover borderless className="mb-0 align-middle">
-                      <thead className="bg-light small text-muted">
+                      <thead style={{ backgroundColor: colors.ui.background }}>
                         <tr>
-                          <th className="ps-3 fw-normal">Counter Name</th>
-                          <th className="text-end pe-3 fw-normal">Served</th>
+                          <th className="ps-3 fw-normal" style={{ color: colors.text.secondary, backgroundColor: colors.ui.background }}>Counter Name</th>
+                          <th className="text-end pe-3 fw-normal" style={{ color: colors.text.secondary, backgroundColor: colors.ui.background }}>Served</th>
                         </tr>
                       </thead>
                       <tbody>
                         {stats.byCounter.length === 0 ? (
-                          <tr><td colSpan={2} className="text-center text-muted small py-4">No data yet.</td></tr>
+                          <tr><td colSpan={2} className="text-center small py-4" style={{ color: colors.text.secondary }}>No data yet.</td></tr>
                         ) : (
                           stats.byCounter.map((item, idx) => (
                             <tr key={idx}>
-                              <td className="ps-3 fw-semibold text-dark">{item.counter_name}</td>
-                              <td className="text-end pe-3 fw-bold text-success">{item.count}</td>
+                              <td className="ps-3 fw-semibold" style={{ color: colors.text.primary, backgroundColor: colors.ui.card }}>{item.counter_name}</td>
+                              <td className="text-end pe-3 fw-bold" style={{ color: colors.success.main, backgroundColor: colors.ui.card }}>{item.count}</td>
                             </tr>
                           ))
                         )}
@@ -202,10 +206,10 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
             </Row>
 
             {/* 4. Scan History with Pagination */}
-            <Card className="mt-4 border-0 shadow-sm">
-              <Card.Header className="bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
-                <span>
-                  <ClockHistory className="me-2 text-secondary" />
+            <Card className="mt-4 border-0 shadow-sm" style={{ backgroundColor: colors.ui.card }}>
+              <Card.Header className="py-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: colors.ui.card, color: colors.text.primary }}>
+                <span className="fw-bold">
+                  <ClockHistory className="me-2" style={{ color: colors.text.secondary }} />
                   Scan History
                 </span>
                 <Badge bg="light" text="dark" className="border">
@@ -216,29 +220,29 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
               <Card.Body className="p-0" style={{ minHeight: '200px' }}>
                 {historyLoading ? (
                     <div className="text-center py-5">
-                        <Spinner animation="border" size="sm" variant="success"/>
+                        <Spinner animation="border" size="sm" style={{ color: colors.primary.main }}/>
                     </div>
                 ) : scanHistory.length === 0 ? (
-                    <div className="text-center py-5 text-muted small">No records found.</div>
+                    <div className="text-center py-5 small" style={{ color: colors.text.secondary }}>No records found.</div>
                 ) : (
                     <Table hover borderless className="mb-0 align-middle">
-                    <thead className="bg-light">
+                    <thead style={{ backgroundColor: colors.ui.background }}>
                         <tr>
-                        <th className="ps-3">Name</th>
-                        <th>Roll No</th>
-                        <th>Batch</th>
-                        <th>Counter</th>
-                        <th>Time</th>
+                        <th className="ps-3" style={{ backgroundColor: colors.ui.background, color: colors.text.primary }}>Name</th>
+                        <th style={{ backgroundColor: colors.ui.background, color: colors.text.primary }}>Roll No</th>
+                        <th style={{ backgroundColor: colors.ui.background, color: colors.text.primary }}>Batch</th>
+                        <th style={{ backgroundColor: colors.ui.background, color: colors.text.primary }}>Counter</th>
+                        <th style={{ backgroundColor: colors.ui.background, color: colors.text.primary }}>Time</th>
                         </tr>
                     </thead>
                     <tbody>
                         {scanHistory.map((scan, idx) => (
                         <tr key={idx}>
-                            <td className="ps-3 fw-medium">{scan.student_name}</td>
-                            <td className="text-muted small">{scan.roll_number}</td>
-                            <td><span className="badge bg-light text-dark border">{scan.batch}</span></td>
-                            <td>{scan.counter_name}</td>
-                            <td className="text-muted small">{formatScanTime(scan.scanned_at)}</td>
+                            <td className="ps-3 fw-medium" style={{ backgroundColor: colors.ui.card, color: colors.text.primary }}>{scan.student_name}</td>
+                            <td className="small" style={{ backgroundColor: colors.ui.card, color: colors.text.secondary }}>{scan.roll_number}</td>
+                            <td style={{ backgroundColor: colors.ui.card }}><span className="badge border" style={{ backgroundColor: colors.ui.background, color: colors.text.primary, borderColor: colors.ui.border }}>{scan.batch}</span></td>
+                            <td style={{ backgroundColor: colors.ui.card, color: colors.text.primary }}>{scan.counter_name}</td>
+                            <td className="small" style={{ backgroundColor: colors.ui.card, color: colors.text.secondary }}>{formatScanTime(scan.scanned_at)}</td>
                         </tr>
                         ))}
                     </tbody>
@@ -247,18 +251,19 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
               </Card.Body>
 
               {/* PAGINATION FOOTER */}
-              <Card.Footer className="bg-white border-top-0 py-3">
+              <Card.Footer className="border-top-0 py-3" style={{ backgroundColor: colors.ui.card }}>
                   <div className="d-flex justify-content-between align-items-center">
                       <Button 
                         variant="outline-secondary" 
                         size="sm" 
                         onClick={handlePrevPage} 
                         disabled={page === 1 || historyLoading}
+                        style={{ color: colors.text.primary, borderColor: colors.ui.border }}
                       >
                           <ChevronLeft className="me-1"/> Previous
                       </Button>
                       
-                      <small className="text-muted">
+                      <small style={{ color: colors.text.secondary }}>
                         Showing {(page - 1) * ITEMS_PER_PAGE + 1} - {(page - 1) * ITEMS_PER_PAGE + scanHistory.length}
                       </small>
 
@@ -267,6 +272,7 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
                         size="sm" 
                         onClick={handleNextPage} 
                         disabled={!hasMore || historyLoading}
+                        style={{ color: colors.text.primary, borderColor: colors.ui.border }}
                       >
                           Next <ChevronRight className="ms-1"/>
                       </Button>
@@ -279,7 +285,7 @@ const EventStatsModal: React.FC<EventStatsModalProps> = ({ show, onHide, eventId
           <Alert variant="info">No statistics available for this event yet.</Alert>
         )}
       </Modal.Body>
-      <Modal.Footer className="border-top-0 bg-light">
+      <Modal.Footer className="border-top-0" style={{ backgroundColor: colors.ui.background }}>
         <Button variant="outline-secondary" onClick={onHide}>Close</Button>
       </Modal.Footer>
     </Modal>

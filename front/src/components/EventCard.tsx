@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from 'react-bootstrap';
 import { CalendarEvent, Clock } from 'react-bootstrap-icons';
 import QrButton from './common/QrButton';
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 
 export interface EventData {
   id: string;
@@ -22,6 +23,7 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
+  const { colors } = useTheme(); // 2. Get dynamic colors
   
   // Helper to format the served time (e.g., "12:30 PM")
   const getServedTimeStr = (timeStr?: string | null) => {
@@ -30,38 +32,54 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
     if (isNaN(date.getTime())) return ''; 
     
     // FIX: Replace normal space with non-breaking space (\u00A0)
-    // This ensures "06:05 PM" stays together and prevents the "PM" from hanging on a new line
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' , hour12: true }).replace(' ', '\u00A0');
   };
 
   return (
-    <Card className="shadow-sm mb-3 h-100" style={{ borderRadius: '15px', border: 'none' }}>
+    <Card 
+      className="shadow-sm mb-3 h-100" 
+      style={{ 
+        borderRadius: '15px', 
+        backgroundColor: colors.ui.card, // Dynamic Background
+        border: `1px solid ${colors.ui.border}` // Dynamic Border
+      }}
+    >
       <Card.Body className="p-4 d-flex flex-column">
         
         {/* Title */}
-        <Card.Title className="h5 fw-bold mb-2">
+        <Card.Title className="h5 fw-bold mb-2" style={{ color: colors.text.primary }}>
           {event.title}
         </Card.Title>
         
         {/* Description */}
-        <Card.Text className="text-secondary small mb-3">
+        <Card.Text className="small mb-3" style={{ color: colors.text.secondary }}>
           {event.description}
         </Card.Text>
         
         {/* Date Info */}
-        <div className="d-flex align-items-center text-muted small mb-3">
+        <div className="d-flex align-items-center small mb-3" style={{ color: colors.text.secondary }}>
           <CalendarEvent className="me-2" />
           <span>Valid: {event.validDate}</span>
         </div>
 
         {/* GREEN BOX: Shows Time Only */}
+        {/* Note: We use theme-specific 'success' or 'primary' colors here for consistency */}
         {event.assignedSlot && (
           <div 
             className="mt-auto mb-3 p-3 rounded" 
-            style={{ backgroundColor: '#e8f5e9', border: '1px solid #c8e6c9' }}
+            style={{ 
+                // Use a light variation of primary for bg, and main for border
+                // You might want to ensure 'colors.primary.light' looks good in dark mode (usually a dark green)
+                backgroundColor: colors.primary.light, 
+                border: `1px solid ${colors.primary.main}` 
+            }}
           >
-            <div className="d-flex align-items-center text-success fw-bold" style={{ fontSize: '0.9rem' }}>
-              <Clock className="me-2" /> {event.assignedSlot.time}
+            <div 
+                className="d-flex align-items-center fw-bold" 
+                style={{ fontSize: '0.9rem', color: colors.text.primary }}
+            >
+              <Clock className="me-2" style={{ color: colors.primary.main }} /> 
+              {event.assignedSlot.time}
             </div>
           </div>
         )}
@@ -70,7 +88,6 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
         <div className="mt-auto">
           {(() => {
             if (event.registrationStatus === 'served') {
-              // Format the time if available
               const timeStr = getServedTimeStr(event.servedAt);
               const buttonText = timeStr 
                 ? `You have been served at ${timeStr}` 

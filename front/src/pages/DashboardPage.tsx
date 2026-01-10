@@ -3,6 +3,7 @@ import EventCard from '../components/EventCard';
 import type { EventData } from '../components/EventCard';
 import QRCodeModal from '../components/QRCodeModal'; 
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 import { Spinner, Container, Badge, Modal, Button, Form, Card, Row, Col } from 'react-bootstrap';
 import { eventsApi, registrationApi } from '../services/api';
 import { ExclamationCircleFill, ClockHistory, CheckCircleFill, XCircleFill } from 'react-bootstrap-icons';
@@ -24,6 +25,8 @@ interface BackendEvent {
 
 // --- FIXED COMPONENT: PAST EVENT CARD ---
 const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
+  const { colors } = useTheme(); // Use Theme colors
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short', day: 'numeric', year: 'numeric'
@@ -32,17 +35,17 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
 
   const formatTime = (timeStr: string | null) => {
     if (!timeStr) return '';
-    return new Date(timeStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit',hour12: true });
+    return new Date(timeStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   const renderStatus = () => {
     if (event.registration_status === 'served') {
       return (
-        <div className="d-flex align-items-center text-success">
+        <div className="d-flex align-items-center" style={{ color: colors.success.main }}>
           <CheckCircleFill className="me-2" size={20} />
           <div>
             <div className="fw-bold">Coupon Claimed</div>
-            <small className="text-muted">
+            <small style={{ color: colors.text.secondary }}>
               Served at {formatTime(event.served_at)}
             </small>
           </div>
@@ -50,21 +53,21 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
       );
     } else if (event.registration_status === 'registered') {
       return (
-        <div className="d-flex align-items-center text-danger">
+        <div className="d-flex align-items-center" style={{ color: colors.error.main }}>
           <XCircleFill className="me-2" size={20} />
           <div>
             <div className="fw-bold">Coupon Unused</div>
-            <small className="text-muted">You registered but didn't eat.</small>
+            <small style={{ color: colors.text.secondary }}>You registered but didn't eat.</small>
           </div>
         </div>
       );
     } else {
       return (
-        <div className="d-flex align-items-center text-secondary">
+        <div className="d-flex align-items-center" style={{ color: colors.text.disabled }}>
           <ExclamationCircleFill className="me-2" size={20} />
           <div>
             <div className="fw-bold">Not Registered</div>
-            <small className="text-muted">Missed this event.</small>
+            <small style={{ color: colors.text.secondary }}>Missed this event.</small>
           </div>
         </div>
       );
@@ -72,16 +75,16 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
   };
 
   return (
-    <Card className="h-100 border-0 shadow-sm" style={{ opacity: 0.8, backgroundColor: '#f8f9fa' }}>
+    <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: colors.ui.background, opacity: 0.9 }}>
       <Card.Body>
         <div className="d-flex justify-content-between align-items-start mb-2">
-          <h5 className="fw-bold text-secondary mb-0">{event.name}</h5>
+          <h5 className="fw-bold mb-0" style={{ color: colors.text.secondary }}>{event.name}</h5>
           <Badge bg="secondary" pill>{formatDate(event.date)}</Badge>
         </div>
         
-        <p className="text-muted small mb-3">{event.description}</p>
+        <p className="small mb-3" style={{ color: colors.text.secondary }}>{event.description}</p>
         
-        <div className="p-3 rounded-3 bg-white border">
+        <div className="p-3 rounded-3 border" style={{ backgroundColor: colors.ui.card, borderColor: colors.ui.border }}>
           {renderStatus()}
         </div>
       </Card.Body>
@@ -91,6 +94,7 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { colors } = useTheme(); // Use Theme colors
   
   // --- UI State ---
   const [activeEvents, setActiveEvents] = useState<EventData[]>([]);
@@ -200,36 +204,52 @@ const DashboardPage: React.FC = () => {
   };
 
   if (loading && activeEvents.length === 0 && pastEvents.length === 0) return (
-    <div className="d-flex justify-content-center align-items-center vh-100">
+    <div className="d-flex justify-content-center align-items-center vh-100" style={{ backgroundColor: colors.ui.background }}>
       <Spinner animation="border" variant="success" />
     </div>
   );
 
   return (
-    <Container className="py-5">
+    <Container className="py-5" style={{ backgroundColor: colors.ui.background, minHeight: '100vh' }}>
       
+      {/* BLUR EFFECT CSS INJECTION 
+          This forces the Bootstrap modal backdrop to have a glassmorphism blur.
+      */}
+      <style type="text/css">
+        {`
+          .modal-backdrop {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px); /* Safari support */
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+          }
+          .modal-backdrop.show {
+            opacity: 1 !important; /* Override Bootstrap opacity to let our background-color handle it */
+          }
+        `}
+      </style>
+
       {/* Welcome Banner */}
       <div 
         className="p-5 rounded-4 mb-5 shadow-sm text-center text-md-start"
         style={{ 
-          background: 'linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%)',
-          borderLeft: '5px solid #4caf50' 
+          // Dynamic gradient for banner
+          background: `linear-gradient(135deg, ${colors.primary.light} 0%, ${colors.ui.card} 100%)`,
+          borderLeft: `5px solid ${colors.primary.main}`,
+          color: colors.text.primary
         }}
       >
-        <h1 className="fw-bold display-6 text-dark mb-2">
-          Welcome back, <span className="text-success">{getCleanName(user?.name)}!</span> 
+        <h1 className="fw-bold display-6 mb-2" style={{ color: colors.text.primary }}>
+          Welcome back, <span style={{ color: colors.primary.main }}>{getCleanName(user?.name)}!</span> 
         </h1>
-        <p className="text-secondary mb-0" style={{ fontSize: '1.1rem' }}>
+        <p className="mb-0" style={{ fontSize: '1.1rem', color: colors.text.secondary }}>
           {todayDate}
         </p>
       </div>
 
-      {/* Control Header: REPLACED with Grid System for better responsiveness */}
+      {/* Control Header */}
       <Row className="align-items-center justify-content-between mb-4 g-3">
-        {/* Title + Badge */}
-        {/* xs={12} means full width on mobile, md="auto" means shrink to fit content on desktop */}
         <Col xs={12} md="auto" className="d-flex align-items-center">
-          <h4 className="fw-bold mb-0 me-3">
+          <h4 className="fw-bold mb-0 me-3" style={{ color: colors.text.primary }}>
             {viewFilter === 'active' ? 'Upcoming Meals' : 'Past History'}
           </h4>
           <Badge bg={viewFilter === 'active' ? 'success' : 'secondary'} pill>
@@ -237,14 +257,18 @@ const DashboardPage: React.FC = () => {
           </Badge>
         </Col>
 
-        {/* Dropdown */}
-        {/* xs={12} means full width on mobile, md="auto" means shrink to fit on desktop */}
         <Col xs={12} md="auto">
           <Form.Select 
             value={viewFilter} 
             onChange={(e) => setViewFilter(e.target.value as 'active' | 'past')}
-            className="shadow-sm border-success"
-            style={{ fontWeight: 'bold', minWidth: '180px' }}
+            className="shadow-sm"
+            style={{ 
+                fontWeight: 'bold', 
+                minWidth: '180px',
+                backgroundColor: colors.ui.card,
+                color: colors.text.primary,
+                borderColor: colors.ui.border
+            }}
           >
             <option value="active">Active Events</option>
             <option value="past">Past Events</option>
@@ -256,8 +280,8 @@ const DashboardPage: React.FC = () => {
       {viewFilter === 'active' ? (
         <Row className="g-4">
           {activeEvents.length === 0 ? (
-            <div className="text-center py-5 bg-light rounded-3">
-              <p className="text-muted mb-0">No active events found for today.</p>
+            <div className="text-center py-5 rounded-3" style={{ backgroundColor: colors.ui.card }}>
+              <p className="mb-0" style={{ color: colors.text.secondary }}>No active events found for today.</p>
             </div>
           ) : (
             activeEvents.map((event) => (
@@ -273,9 +297,9 @@ const DashboardPage: React.FC = () => {
       ) : (
         <Row className="g-4">
           {pastEvents.length === 0 ? (
-            <div className="text-center py-5 bg-light rounded-3">
-              <ClockHistory size={32} className="text-muted mb-3"/>
-              <p className="text-muted mb-0">No history available yet.</p>
+            <div className="text-center py-5 rounded-3" style={{ backgroundColor: colors.ui.card }}>
+              <ClockHistory size={32} className="mb-3" style={{ color: colors.text.secondary }}/>
+              <p className="mb-0" style={{ color: colors.text.secondary }}>No history available yet.</p>
             </div>
           ) : (
             pastEvents.map((event) => (
@@ -287,7 +311,7 @@ const DashboardPage: React.FC = () => {
         </Row>
       )}
 
-      {/* Modals */}
+      {/* Modals - Note: QRCodeModal needs dynamic theming too if not handled internally */}
       <QRCodeModal 
         show={showQrModal}
         onHide={handleCloseQrModal}
@@ -296,8 +320,14 @@ const DashboardPage: React.FC = () => {
         slotDetails={selectedEvent?.assignedSlot}
       />
 
-      <Modal show={showErrorModal} onHide={handleCloseErrorModal} centered>
-        <Modal.Header closeButton className="border-0 pb-0">
+      <Modal 
+        show={showErrorModal} 
+        onHide={handleCloseErrorModal} 
+        centered
+        // Bootstrap modal theming is tricky, usually handled via CSS overrides or custom content
+        contentClassName={colors.ui.card === '#1E1E1E' ? 'bg-dark text-white' : ''}
+      >
+        <Modal.Header closeButton className="border-0 pb-0" closeVariant={colors.ui.card === '#1E1E1E' ? 'white' : undefined}>
           <Modal.Title className="text-danger d-flex align-items-center">
             <ExclamationCircleFill className="me-2" />
             Registration Issue
@@ -305,7 +335,7 @@ const DashboardPage: React.FC = () => {
         </Modal.Header>
         <Modal.Body className="py-4 text-center">
           <h5 className="mb-3">Could not generate QR Code</h5>
-          <p className="text-muted mb-0">{apiErrorMessage}</p>
+          <p className="mb-0" style={{ color: colors.text.secondary }}>{apiErrorMessage}</p>
         </Modal.Body>
         <Modal.Footer className="border-0 justify-content-center pt-0 pb-4">
           <Button variant="secondary" onClick={handleCloseErrorModal} className="px-4 rounded-pill">

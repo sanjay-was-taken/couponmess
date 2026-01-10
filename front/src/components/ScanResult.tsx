@@ -5,6 +5,7 @@ import {
   ExclamationTriangleFill, 
   XCircleFill 
 } from 'react-bootstrap-icons';
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 
 export interface ScanResult {
   status: 'success' | 'error' | 'warning';
@@ -18,6 +19,7 @@ interface ScanResultPageProps {
 }
 
 const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
+  const { colors } = useTheme(); // 2. Get dynamic colors
   
   let IconComponent;
   let iconColor = '';
@@ -28,27 +30,27 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
   switch (result.status) {
     case 'success':
       IconComponent = CheckCircleFill;
-      iconColor = '#198754'; // Green
-      backgroundColor = '#d1e7dd'; 
-      textColor = '#0f5132';
+      iconColor = colors.success.main; // Dynamic Success Green
+      backgroundColor = colors.success.background; // Dynamic Light Green/Dark Green
+      textColor = colors.success.main; // Use main color for text contrast
       btnVariant = 'success';
       break;
 
     case 'warning': 
       // 🟡 WARNING STATE (Yellow)
       IconComponent = ExclamationTriangleFill;
-      iconColor = '#fd7e14'; // Orange/Yellow
-      backgroundColor = '#fff3cd'; // Light Yellow Background
-      textColor = '#664d03'; // Dark Yellow Text
-      btnVariant = 'warning'; // Bootstrap yellow button
+      iconColor = colors.warning.main; // Dynamic Warning Yellow
+      backgroundColor = colors.warning.background; 
+      textColor = colors.warning.main;
+      btnVariant = 'warning'; 
       break;
 
     case 'error':
     default:
       IconComponent = XCircleFill;
-      iconColor = '#dc3545'; // Red
-      backgroundColor = '#f8d7da'; 
-      textColor = '#842029';
+      iconColor = colors.error.main; // Dynamic Error Red
+      backgroundColor = colors.error.background; 
+      textColor = colors.error.main;
       btnVariant = 'danger';
       break;
   }
@@ -59,7 +61,7 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
       className="d-flex flex-column justify-content-center align-items-center"
       style={{ 
         height: '100vh', 
-        backgroundColor: backgroundColor, 
+        backgroundColor: backgroundColor, // Dynamic BG
         padding: '1rem',
         transition: 'background-color 0.3s ease'
       }}
@@ -88,7 +90,7 @@ const ScanResult: React.FC<ScanResultPageProps> = ({ result, onScanNext }) => {
         style={{ minWidth: '200px' }}
         onClick={onScanNext} 
       >
-        {result.status === 'warning' ? 'Scan Next' : 'Scan Next'}
+        Scan Next
       </Button>
     </Container>
   );

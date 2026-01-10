@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Spinner, Alert, Button } from 'react-bootstrap';
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 
 interface QrScannerProps {
   onScanSuccess: (decodedText: string) => void;
@@ -13,6 +14,7 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const { colors } = useTheme(); // 2. Get dynamic colors
 
   useEffect(() => {
     // 1. Initialize the Core Scanner
@@ -73,34 +75,53 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
   }
 
   return (
-    <div className="qr-scanner-container position-relative bg-black rounded-3 overflow-hidden" style={{ minHeight: '300px' }}>
+    <div 
+        className="qr-scanner-container position-relative rounded-3 overflow-hidden" 
+        style={{ minHeight: '300px', backgroundColor: '#000' }} // Keep background black for camera feed container
+    >
       
       {/* The actual video element container */}
       <div id={scannerRegionId} className="w-100 h-100" />
 
       {/* Loading Overlay */}
       {!hasPermission && !startError && (
-        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-white bg-dark">
-            <Spinner animation="border" variant="light" className="mb-3"/>
+        <div 
+            className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+            style={{ 
+                backgroundColor: colors.ui.card, // Dynamic BG
+                color: colors.text.primary      // Dynamic Text
+            }}
+        >
+            <Spinner animation="border" style={{ color: colors.primary.main }} className="mb-3"/>
             <p>Starting Camera...</p>
         </div>
       )}
 
       {/* Error Overlay */}
       {startError && (
-          <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-dark p-4 text-center">
+          <div 
+            className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center"
+            style={{ backgroundColor: colors.ui.card }}
+          >
               <Alert variant="danger">{startError}</Alert>
-              <Button variant="light" size="sm" onClick={handleRetry}>Try Again</Button>
+              <Button 
+                variant="outline-secondary" 
+                size="sm" 
+                onClick={handleRetry}
+                style={{ color: colors.text.primary, borderColor: colors.ui.border }}
+              >
+                Try Again
+              </Button>
           </div>
       )}
 
-      {/* Guide Box */}
+      {/* Guide Box - Kept largely same as it needs to overlay video */}
       {hasPermission && (
           <div className="position-absolute top-50 start-50 translate-middle pointer-events-none" 
                style={{ 
                    width: '250px', 
                    height: '250px', 
-                   border: '2px solid rgba(255,255,255,0.6)', 
+                   border: `2px solid ${colors.primary.main}`, // Use primary color for the scanning frame
                    borderRadius: '12px',
                    boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
                }}>

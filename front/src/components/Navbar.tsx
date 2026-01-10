@@ -1,11 +1,13 @@
 import React from 'react';
-import { Navbar, Container, Dropdown } from 'react-bootstrap'; 
-import { PersonCircle, BoxArrowRight, ShieldLock } from 'react-bootstrap-icons';
+import { Navbar, Container, Dropdown, Button } from 'react-bootstrap'; 
+import { PersonCircle, BoxArrowRight, ShieldLock, Moon, Sun } from 'react-bootstrap-icons';
 import { Link, useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext'; // Import Theme Hook
 
 const AppNavbar: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
+  const { mode, toggleTheme, colors } = useTheme(); // Get theme values
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -27,10 +29,14 @@ const AppNavbar: React.FC = () => {
 
   return (
     <Navbar 
-      bg="white" 
-      className="shadow-sm border-bottom sticky-top"
-      // 1. INCREASED HEIGHT: Changed minHeight to 90px and padding to py-3
-      style={{ minHeight: '90px', padding: '12px 0' }} 
+      // Use dynamic background color from theme
+      style={{ 
+        minHeight: '90px', 
+        padding: '12px 0',
+        backgroundColor: colors.ui.card, 
+        borderBottom: `1px solid ${colors.ui.border}`
+      }} 
+      className="shadow-sm sticky-top"
     >
       <Container className="d-flex justify-content-between align-items-center">
         
@@ -38,70 +44,111 @@ const AppNavbar: React.FC = () => {
         <Navbar.Brand 
             as={Link} 
             to={getHomeRoute()} 
-            className="fw-bold d-flex align-items-center text-dark p-0"
+            className="fw-bold d-flex align-items-center p-0"
+            style={{ color: colors.text.primary }} // Dynamic text color
         >
           <img 
             src="/klee-logo.png" 
             alt="Klee Logo" 
-            // 2. INCREASED LOGO SIZE
             style={{ height: '42px', width: 'auto' }} 
             className="me-3"
           />
-          {/* 3. INCREASED TEXT SIZE */}
-          <span style={{ letterSpacing: '-0.5px', fontSize: '1.4rem' }}>FeastOn</span>
+          <span style={{ letterSpacing: '-0.5px', fontSize: '1.5rem' }}>FeastOn</span>
         </Navbar.Brand>
         
         {/* RIGHT SIDE CONTENT */}
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center gap-3">
           
+          {/* Theme Toggle Button */}
+          <Button 
+            variant="link" 
+            onClick={toggleTheme}
+            style={{ color: colors.text.secondary, fontSize: '1.2rem' }}
+            className="p-1"
+          >
+            {mode === 'light' ? <Moon /> : <Sun />}
+          </Button>
+
           {isAuthenticated && user && (
             <Dropdown align="end">
               <Dropdown.Toggle 
-                variant="light" 
+                variant="light" // Keep variant light for structure, but override styles
                 id="dropdown-basic" 
-                // Increased padding for a larger button look
-                className="d-flex align-items-center border bg-white rounded-pill px-3 py-2 shadow-sm"
-                style={{ transition: 'all 0.2s' }}
+                className="d-flex align-items-center border rounded-pill px-3 py-2 shadow-sm"
+                style={{ 
+                    transition: 'all 0.2s',
+                    backgroundColor: colors.ui.background,
+                    borderColor: colors.ui.border,
+                    color: colors.text.primary
+                }}
               >
-                <div className="bg-light rounded-circle p-1 text-success d-flex align-items-center justify-content-center">
-                  {/* 4. INCREASED ICON SIZE */}
+                <div className="rounded-circle p-1 d-flex align-items-center justify-content-center" 
+                     style={{ color: colors.primary.main, backgroundColor: colors.ui.card }}>
                   <PersonCircle size={30}/>
                 </div>
                 
-                {/* 5. INCREASED NAME SIZE (Removed 'small' class, added fontSize) */}
-                <span className="fw-semibold text-dark ms-3 d-none d-sm-block" style={{ fontSize: '1rem' }}>
+                <span className="fw-semibold ms-3 d-none d-sm-block" style={{ fontSize: '1rem', color: colors.text.primary }}>
                   {getCleanName(user.name)}
                 </span>
               </Dropdown.Toggle>
 
-              <Dropdown.Menu className="shadow-lg border-0 mt-3 p-2 rounded-4" style={{ minWidth: '260px', position: 'absolute' }}>
+              <Dropdown.Menu 
+                className="shadow-lg mt-3 p-2 rounded-4" 
+                style={{ 
+                    minWidth: '260px', 
+                    position: 'absolute',
+                    backgroundColor: colors.ui.card,
+                    borderColor: colors.ui.border
+                }}
+              >
                 
                 {/* Mobile Name */}
-                <div className="px-3 py-2 border-bottom mb-2 d-block d-sm-none">
-                  <p className="mb-0 fw-bold text-dark" style={{ fontSize: '1.1rem' }}>{getCleanName(user.name)}</p>
+                <div className="px-3 py-2 border-bottom mb-2 d-block d-sm-none" style={{ borderColor: colors.ui.border }}>
+                  <p className="mb-0 fw-bold" style={{ fontSize: '1.1rem', color: colors.text.primary }}>{getCleanName(user.name)}</p>
                 </div>
 
                 {/* Desktop Name */}
-                <div className="px-3 py-2 border-bottom mb-2 d-none d-sm-block">
-                  <p className="mb-0 fw-bold text-dark" style={{ fontSize: '1.1rem' }}>{getCleanName(user.name)}</p>
-                  <small className="text-muted" style={{ fontSize: '0.85rem' }}>{user.email}</small>
+                <div className="px-3 py-2 border-bottom mb-2 d-none d-sm-block" style={{ borderColor: colors.ui.border }}>
+                  <p className="mb-0 fw-bold" style={{ fontSize: '1.1rem', color: colors.text.primary }}>{getCleanName(user.name)}</p>
+                  <small style={{ fontSize: '0.85rem', color: colors.text.secondary }}>{user.email}</small>
                 </div>
 
                 <Dropdown.ItemText className="mb-2">
-                  <span className={`badge bg-${user.role === 'admin' ? 'danger' : 'primary'}-subtle text-${user.role === 'admin' ? 'danger' : 'primary'} border border-${user.role === 'admin' ? 'danger' : 'primary'}-subtle rounded-pill px-3 py-2`} style={{ fontSize: '0.85rem' }}>
+                  <span 
+                    className="badge border rounded-pill px-3 py-2" 
+                    style={{ 
+                        fontSize: '0.85rem',
+                        backgroundColor: colors.primary.light, // Use theme light variant
+                        color: colors.primary.dark,
+                        borderColor: colors.primary.main
+                    }}
+                  >
                     {user.role.toUpperCase()}
                   </span>
                 </Dropdown.ItemText>
 
                 {user.role === 'admin' && (
-                  <Dropdown.Item as={Link} to="/admin" className="rounded-3 py-2" style={{ fontSize: '1rem' }}>
+                  <Dropdown.Item 
+                    as={Link} 
+                    to="/admin" 
+                    className="rounded-3 py-2" 
+                    style={{ fontSize: '1rem', color: colors.text.primary }}
+                    onMouseOver={(e: any) => e.currentTarget.style.backgroundColor = colors.ui.background}
+                    onMouseOut={(e: any) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
                     <ShieldLock className="me-2" /> Admin Panel
                   </Dropdown.Item>
                 )}
 
-                <Dropdown.Divider className="my-2" />
+                <Dropdown.Divider className="my-2" style={{ borderColor: colors.ui.border }} />
 
-                <Dropdown.Item onClick={handleLogout} className="text-danger rounded-3 py-2 fw-semibold" style={{ fontSize: '1rem' }}>
+                <Dropdown.Item 
+                    onClick={handleLogout} 
+                    className="rounded-3 py-2 fw-semibold" 
+                    style={{ fontSize: '1rem', color: colors.error.main }}
+                    onMouseOver={(e: any) => e.currentTarget.style.backgroundColor = colors.error.background}
+                    onMouseOut={(e: any) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
                   <BoxArrowRight className="me-2" /> Logout
                 </Dropdown.Item>
               </Dropdown.Menu>
