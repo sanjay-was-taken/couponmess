@@ -94,7 +94,7 @@ const LoginPage: React.FC = () => {
               onError={() => setError("Google Login Failed")}
               useOneTap
               shape="pill" 
-              width="250px" 
+              width="200px" 
               // 'filled_black' is the best option for dark mode compliance
               theme={mode === 'dark' ? 'filled_black' : 'outline'} 
               text="signin_with"
