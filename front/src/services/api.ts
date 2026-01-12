@@ -13,8 +13,7 @@ const token = localStorage.getItem('coupon_app_token');
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
+      const timeoutId = setTimeout(() => controller.abort(), 4000); // changed from 10000 to 4000
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
