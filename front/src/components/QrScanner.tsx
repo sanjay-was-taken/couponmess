@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Spinner, Alert, Button } from 'react-bootstrap';
-import { useTheme } from '../context/ThemeContext'; 
+import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
 
 interface QrScannerProps {
   onScanSuccess: (decodedText: string) => void;
@@ -14,7 +14,7 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
-  const { colors } = useTheme(); 
+  const { colors } = useTheme(); // 2. Get dynamic colors
 
   useEffect(() => {
     // 1. Initialize the Core Scanner
@@ -32,13 +32,17 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
           { facingMode: "environment" }, 
           {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
-            // FIX: Removed aspectRatio: 1.0 
-            // This allows the camera to use its native aspect ratio (usually 4:3 or 16:9 on phones)
-            // preventing the black bars from appearing on iOS.
+            qrbox: function(viewfinderWidth, viewfinderHeight) {
+            let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            let qrboxSize = Math.floor(minEdge * 0.7);
+            return { width: qrboxSize, height: qrboxSize };
+          },
+
+            aspectRatio: 1.0,
           },
           (decodedText) => {
             // Success Callback
+            // We pause immediately to stop multiple scans of the same code
             html5QrCode.pause();
             onScanSuccess(decodedText);
           },
@@ -65,7 +69,7 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
         }).catch(err => console.error("Stop failed", err));
       }
     };
-  }, []); 
+  }, []); // Run once on mount
 
   const handleRetry = () => {
      if (scannerRef.current && scannerRef.current.isScanning === false) {
@@ -78,7 +82,7 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
   return (
     <div 
         className="qr-scanner-container position-relative rounded-3 overflow-hidden" 
-        style={{ minHeight: '300px', backgroundColor: '#000' }} 
+        style={{ minHeight: '300px', backgroundColor: '#000' }} // Keep background black for camera feed container
     >
       
       {/* The actual video element container */}
@@ -89,8 +93,8 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
         <div 
             className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
             style={{ 
-                backgroundColor: colors.ui.card, 
-                color: colors.text.primary      
+                backgroundColor: colors.ui.card, // Dynamic BG
+                color: colors.text.primary      // Dynamic Text
             }}
         >
             <Spinner animation="border" style={{ color: colors.primary.main }} className="mb-3"/>
@@ -116,13 +120,13 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
           </div>
       )}
 
-      {/* Guide Box */}
+      {/* Guide Box - Kept largely same as it needs to overlay video */}
       {hasPermission && (
           <div className="position-absolute top-50 start-50 translate-middle pointer-events-none" 
                style={{ 
                    width: '250px', 
                    height: '250px', 
-                   border: `2px solid ${colors.primary.main}`, 
+                   border: `2px solid ${colors.primary.main}`, // Use primary color for the scanning frame
                    borderRadius: '12px',
                    boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
                }}>
@@ -130,7 +134,13 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
       )}
       
       <style>{`
-        #qr-scanner-region video { object-fit: cover; width: 100% !important; height: 100% !important; }
+        #qr-scanner-region video { 
+        object-fit: contain; 
+        width: 100% !important; 
+        height: 100% !important; 
+        background: #000;
+      }
+
       `}</style>
     </div>
   );
