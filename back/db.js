@@ -8,8 +8,8 @@ const pool = new Pool({
     max: 20, // Maximum connections
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
-    statement_timeout: 10000, // 10 second query timeout
-    query_timeout: 10000,
+    statement_timeout: 3000, // 10s to 3s
+    query_timeout: 3000,    //10s to 3s
 });
 
 // Connection error handling
