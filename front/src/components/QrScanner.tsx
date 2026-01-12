@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Spinner, Alert, Button } from 'react-bootstrap';
-import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
+import { useTheme } from '../context/ThemeContext'; 
 
 interface QrScannerProps {
   onScanSuccess: (decodedText: string) => void;
@@ -14,7 +14,7 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
-  const { colors } = useTheme(); // 2. Get dynamic colors
+  const { colors } = useTheme(); 
 
   useEffect(() => {
     // 1. Initialize the Core Scanner
@@ -33,11 +33,12 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
           {
             fps: 10,
             qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
+            // FIX: Removed aspectRatio: 1.0 
+            // This allows the camera to use its native aspect ratio (usually 4:3 or 16:9 on phones)
+            // preventing the black bars from appearing on iOS.
           },
           (decodedText) => {
             // Success Callback
-            // We pause immediately to stop multiple scans of the same code
             html5QrCode.pause();
             onScanSuccess(decodedText);
           },
@@ -64,7 +65,7 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
         }).catch(err => console.error("Stop failed", err));
       }
     };
-  }, []); // Run once on mount
+  }, []); 
 
   const handleRetry = () => {
      if (scannerRef.current && scannerRef.current.isScanning === false) {
@@ -77,7 +78,7 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
   return (
     <div 
         className="qr-scanner-container position-relative rounded-3 overflow-hidden" 
-        style={{ minHeight: '300px', backgroundColor: '#000' }} // Keep background black for camera feed container
+        style={{ minHeight: '300px', backgroundColor: '#000' }} 
     >
       
       {/* The actual video element container */}
@@ -88,8 +89,8 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
         <div 
             className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
             style={{ 
-                backgroundColor: colors.ui.card, // Dynamic BG
-                color: colors.text.primary      // Dynamic Text
+                backgroundColor: colors.ui.card, 
+                color: colors.text.primary      
             }}
         >
             <Spinner animation="border" style={{ color: colors.primary.main }} className="mb-3"/>
@@ -115,13 +116,13 @@ export const QrScanner = ({ onScanSuccess, onScanFailure }: QrScannerProps) => {
           </div>
       )}
 
-      {/* Guide Box - Kept largely same as it needs to overlay video */}
+      {/* Guide Box */}
       {hasPermission && (
           <div className="position-absolute top-50 start-50 translate-middle pointer-events-none" 
                style={{ 
                    width: '250px', 
                    height: '250px', 
-                   border: `2px solid ${colors.primary.main}`, // Use primary color for the scanning frame
+                   border: `2px solid ${colors.primary.main}`, 
                    borderRadius: '12px',
                    boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
                }}>
