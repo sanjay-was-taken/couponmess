@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.use(helmet({
+/*app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -59,7 +59,7 @@ app.use(helmet({
     }
   }
 }));
-    
+*/    
 
 app.use(compression());
 
