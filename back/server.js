@@ -23,43 +23,22 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-/*app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'",
-        "'unsafe-inline'",  // Google OAuth needs this
-        "https://accounts.google.com",
-        "https://apis.google.com",
-        "https://www.gstatic.com"
-      ],
-      styleSrc: [
-        "'self'", 
-        "'unsafe-inline'",  // Keep this for Bootstrap/React styles
-        "https://accounts.google.com"
-      ],
-      frameSrc: [
-        "'self'",
-        "https://accounts.google.com"
-      ],
-      connectSrc: [
-        "'self'",
-        "https://accounts.google.com",
-        "https://www.googleapis.com",
-        "https://oauth2.googleapis.com"
-      ],
-      imgSrc: [
-        "'self'",
-        "data:",
-        "https://lh3.googleusercontent.com",
-        "https://www.gstatic.com"
-      ],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"]
-    }
-  }
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false,
+  originAgentCluster: false,
+  referrerPolicy: false,
+  strictTransportSecurity: false,
+  xContentTypeOptions: false,
+  xDnsPrefetchControl: false,
+  xDownloadOptions: false,
+  xFrameOptions: false,
+  xPermittedCrossDomainPolicies: false,
+  xPoweredBy: false,
+  xXssProtection: false
 }));
-*/    
 
 app.use(compression());
 
@@ -137,4 +116,3 @@ setInterval(async () => {
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
-
