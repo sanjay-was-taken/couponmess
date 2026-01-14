@@ -5,7 +5,7 @@ const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
 require('dotenv').config();
-
+const rateLimit = require('express-rate-limit');
 const db = require('./db');
 
 // Routes
@@ -21,6 +21,13 @@ const PORT = process.env.PORT || 3000;
    Global Middleware
 ====================== */
 app.use(cors());
+
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute per IP
+  message: { error: 'Too many requests, please try again later' }
+});
+app.use('/api/', limiter);
 app.use(express.json());
 
 app.use(helmet({
