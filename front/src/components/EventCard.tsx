@@ -1,8 +1,8 @@
 import React from 'react';
 import { Card } from 'react-bootstrap';
 import { CalendarEvent, Clock } from 'react-bootstrap-icons';
-import QrButton from './common/QrButton';
-import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
+import QrButton from './common/QrButton'; 
+import { useTheme } from '../context/ThemeContext'; 
 
 export interface EventData {
   id: string;
@@ -23,16 +23,31 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
-  const { colors } = useTheme(); // 2. Get dynamic colors
+  const { colors, mode } = useTheme(); 
   
-  // Helper to format the served time (e.g., "12:30 PM")
+  // Helper to format the served time
   const getServedTimeStr = (timeStr?: string | null) => {
     if (!timeStr) return '';
     const date = new Date(timeStr);
     if (isNaN(date.getTime())) return ''; 
     
-    // FIX: Replace normal space with non-breaking space (\u00A0)
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' , hour12: true }).replace(' ', '\u00A0');
+  };
+
+  // --- STYLE CONFIGURATION ---
+  const timeBoxStyle = {
+    // Background: Mint for light mode, Dark Green for dark mode
+    backgroundColor: mode === 'light' ? '#e8f5e9' : colors.success.background,
+    
+    // Text: Dark Green (#198754) for light, Theme Success for dark
+    color: mode === 'light' ? '#198754' : colors.success.main,
+    
+    // Border: Lighter opacity to match the 'Served' box
+    // Light Mode: #198754 with 50% opacity
+    // Dark Mode: Theme Success color with 50% opacity
+    border: mode === 'light' 
+      ? '1px solid rgba(25, 135, 84, 0.5)' 
+      : `1px solid ${colors.success.main}80` 
   };
 
   return (
@@ -40,8 +55,8 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
       className="shadow-sm mb-3 h-100" 
       style={{ 
         borderRadius: '15px', 
-        backgroundColor: colors.ui.card, // Dynamic Background
-        border: `1px solid ${colors.ui.border}` // Dynamic Border
+        backgroundColor: colors.ui.card, 
+        border: `1px solid ${colors.ui.border}` 
       }}
     >
       <Card.Body className="p-4 d-flex flex-column">
@@ -62,23 +77,20 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
           <span>Valid: {event.validDate}</span>
         </div>
 
-        {/* GREEN BOX: Shows Time Only */}
-        {/* Note: We use theme-specific 'success' or 'primary' colors here for consistency */}
+        {/* TIME SLOT BOX */}
         {event.assignedSlot && (
           <div 
             className="mt-auto mb-3 p-3 rounded" 
             style={{ 
-                // Use a light variation of primary for bg, and main for border
-                // You might want to ensure 'colors.primary.light' looks good in dark mode (usually a dark green)
-                backgroundColor: colors.primary.light, 
-                border: `1px solid ${colors.primary.main}` 
+                backgroundColor: timeBoxStyle.backgroundColor, 
+                border: timeBoxStyle.border 
             }}
           >
             <div 
                 className="d-flex align-items-center fw-bold" 
-                style={{ fontSize: '0.9rem', color: colors.primary.main }}
+                style={{ fontSize: '0.9rem', color: timeBoxStyle.color }}
             >
-              <Clock className="me-2" style={{ color: colors.primary.main }} /> 
+              <Clock className="me-2" style={{ color: timeBoxStyle.color }} /> 
               {event.assignedSlot.time}
             </div>
           </div>
