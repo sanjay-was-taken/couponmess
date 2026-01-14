@@ -4,12 +4,12 @@ require('dotenv').config();
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    // Production optimizations
-    max: 20, // Maximum connections
+    max: 50, // Increase from 20 to 50 for 2k traffic
+    min: 10, // Add minimum connections
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-    statement_timeout: 3000, // 10s to 3s
-    query_timeout: 3000,    //10s to 3s
+    connectionTimeoutMillis: 3000, // Increase from 2000
+    statement_timeout: 5000, // Increase from 3000 for peak load
+    query_timeout: 5000,
 });
 
 // Connection error handling
