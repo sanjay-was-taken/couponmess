@@ -76,7 +76,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onGetQR }) => {
           >
             <div 
                 className="d-flex align-items-center fw-bold" 
-                style={{ fontSize: '0.9rem', color: colors.text.primary }}
+                style={{ fontSize: '0.9rem', color: colors.primary.main }}
             >
               <Clock className="me-2" style={{ color: colors.primary.main }} /> 
               {event.assignedSlot.time}
