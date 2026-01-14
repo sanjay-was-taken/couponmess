@@ -3,7 +3,7 @@ import EventCard from '../components/EventCard';
 import type { EventData } from '../components/EventCard';
 import QRCodeModal from '../components/QRCodeModal'; 
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext'; // 1. Import Theme Hook
+import { useTheme } from '../context/ThemeContext'; 
 import { Spinner, Container, Badge, Modal, Button, Form, Card, Row, Col } from 'react-bootstrap';
 import { eventsApi, registrationApi } from '../services/api';
 import { ExclamationCircleFill, ClockHistory, CheckCircleFill, XCircleFill } from 'react-bootstrap-icons';
@@ -25,7 +25,7 @@ interface BackendEvent {
 
 // --- FIXED COMPONENT: PAST EVENT CARD ---
 const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
-  const { colors } = useTheme(); // Use Theme colors
+  const { colors } = useTheme(); 
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -94,7 +94,7 @@ const PastEventCard: React.FC<{ event: BackendEvent }> = ({ event }) => {
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const { colors } = useTheme(); // Use Theme colors
+  const { colors } = useTheme(); 
   
   // --- UI State ---
   const [activeEvents, setActiveEvents] = useState<EventData[]>([]);
@@ -212,18 +212,16 @@ const DashboardPage: React.FC = () => {
   return (
     <Container className="py-5" style={{ backgroundColor: colors.ui.background, minHeight: '100vh' }}>
       
-      {/* BLUR EFFECT CSS INJECTION 
-          This forces the Bootstrap modal backdrop to have a glassmorphism blur.
-      */}
+      {/* BLUR EFFECT CSS INJECTION */}
       <style type="text/css">
         {`
           .modal-backdrop {
             backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px); /* Safari support */
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+            -webkit-backdrop-filter: blur(8px); 
+            background-color: rgba(0, 0, 0, 0.5); 
           }
           .modal-backdrop.show {
-            opacity: 1 !important; /* Override Bootstrap opacity to let our background-color handle it */
+            opacity: 1 !important; 
           }
         `}
       </style>
@@ -232,7 +230,6 @@ const DashboardPage: React.FC = () => {
       <div 
         className="p-5 rounded-4 mb-5 shadow-sm text-center text-md-start"
         style={{ 
-          // Dynamic gradient for banner
           background: `linear-gradient(135deg, ${colors.primary.light} 0%, ${colors.ui.card} 100%)`,
           borderLeft: `5px solid ${colors.primary.main}`,
           color: colors.text.primary
@@ -258,6 +255,7 @@ const DashboardPage: React.FC = () => {
         </Col>
 
         <Col xs={12} md="auto">
+          {/* UPDATED: Added glow effect back to the dropdown */}
           <Form.Select 
             value={viewFilter} 
             onChange={(e) => setViewFilter(e.target.value as 'active' | 'past')}
@@ -267,7 +265,10 @@ const DashboardPage: React.FC = () => {
                 minWidth: '180px',
                 backgroundColor: colors.ui.card,
                 color: colors.text.primary,
-                borderColor: colors.ui.border
+                // FIX: Use Primary Color for Border & Add Glow Shadow
+                border: `2px solid ${colors.primary.main}`, 
+                boxShadow: `0 0 8px ${colors.primary.main}40`, // 25% opacity glow
+                cursor: 'pointer'
             }}
           >
             <option value="active">Active Events</option>
@@ -311,7 +312,7 @@ const DashboardPage: React.FC = () => {
         </Row>
       )}
 
-      {/* Modals - Note: QRCodeModal needs dynamic theming too if not handled internally */}
+      {/* Modals */}
       <QRCodeModal 
         show={showQrModal}
         onHide={handleCloseQrModal}
@@ -324,7 +325,6 @@ const DashboardPage: React.FC = () => {
         show={showErrorModal} 
         onHide={handleCloseErrorModal} 
         centered
-        // Bootstrap modal theming is tricky, usually handled via CSS overrides or custom content
         contentClassName={colors.ui.card === '#1E1E1E' ? 'bg-dark text-white' : ''}
       >
         <Modal.Header closeButton className="border-0 pb-0" closeVariant={colors.ui.card === '#1E1E1E' ? 'white' : undefined}>
